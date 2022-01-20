@@ -1,0 +1,410 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+import("//build/config/sanitizers/sanitizers.gni")
+
+if (current_cpu == "arm" || current_cpu == "arm64") {
+  import("//build/config/arm.gni")
+}
+
+
+config("compiler") {
+  asmflags = []
+  cflags = []
+  cflags_c = []
+  cflags_cc = []
+  ldflags = []
+  defines = []
+  configs = []
+
+  if (is_android) {
+    configs += [ "//build/config/android:compiler" ]
+  } else if (is_linux) {
+    configs += [ "//build/config/linux:compiler" ]
+  } else if (is_mac) {
+    configs += [ "//build/config/mac:compiler" ]
+  } else if (is_ios) {
+    configs += [ "//build/config/ios:compiler" ]
+  } else {
+    assert(false, "Compiler configuration is not supported on the target platform")
+  }
+
+  configs += [
+    "//build/config/java:compiler",
+  ]
+
+  # Common compiler settings.
+  # Enable C++11
+  if (is_android || is_linux) {
+    # Use pipe for faster sub-process communiation
+    cflags += [ "--pipe" ]
+
+    # position-independent code
+    cflags += [ "-fPIC" ]
+
+    cflags += [ "-fno-strict-aliasing" ]
+
+    # Do this everywhere even if "-fvisibility=default" is set.
+    cflags_cc += [ "-fvisibility-inlines-hidden" ]
+
+    ldflags += [ "-fPIC" ]
+    ldflags += [
+      "-Wl,--fatal-warnings",
+      "-Wl,-z,noexecstack",
+      "-Wl,-z,now",
+      "-Wl,-z,relro",
+      "-fuse-ld=gold",
+      "-Werror",
+    ]
+
+    if (current_cpu == "arm") {
+      ldflags += [
+        # Enable identical code folding to reduce size.
+        "-Wl,--icf=all",
+      ]
+    }
+
+    if (is_linux) {
+      ldflags += [
+        "-pthread",
+        "-ldl",
+      ]
+    }
+  } else if(is_mac || is_ios) {
+
+    cflags_cc += [
+      "-fvisibility-inlines-hidden",
+      "-Wno-missing-braces",
+    ]
+  }
+
+  configs += [
+    ":compiler_cpu_abi",
+  ]
+
+  # NDEBUG for release build.
+  if (!is_debug) {
+    defines += [ "NDEBUG" ]
+  }
+
+  if (is_android) {
+    defines += [
+      "OS_ANDROID",
+      "OS_LINUX",
+      "OS_POSIX",
+    ]
+  } else if (is_linux) {
+    defines += [
+      "OS_LINUX",
+      "OS_POSIX",
+    ]
+  }
+
+  if (is_clang) {
+    cflags += [ "-fcolor-diagnostics" ]
+  }
+
+  asmflags = cflags
+}
+
+config("compiler_cpu_abi") {
+  cflags = []
+  ldflags = []
+
+  if (is_linux || is_android) {
+    if (current_cpu == "arm") {
+      cflags += [
+        "-march=armv7-a",
+        "-mfloat-abi=$arm_float_abi",
+      ]
+      if (arm_tune != "") {
+        cflags += [ "-mtune=$arm_tune" ]
+      }
+    } else if (current_cpu == "arm64") {
+      # No config for arm64
+    } else if (current_cpu == "x86") {
+      cflags += [ "-m32" ]
+      ldflags += [ "-m32" ]
+    } else if (current_cpu == "x64") {
+      cflags += [
+        "-m64",
+        "-march=x86-64",
+      ]
+      ldflags += [ "-m64" ]
+    }
+  } else if (is_mac || is_ios) {
+    # These flags are shared between the C compiler and linker.
+    common_mac_flags = []
+
+    # CPU architecture.
+    if (current_cpu == "x64") {
+      common_mac_flags += [
+        "-arch",
+        "x86_64",
+      ]
+    } else if (current_cpu == "x86") {
+      common_mac_flags += [
+        "-arch",
+        "i386",
+      ]
+    } else if (current_cpu == "arm") {
+      common_mac_flags += [
+        "-arch",
+        "armv7",
+      ]
+    } else if (current_cpu == "arm64") {
+      common_mac_flags += [
+        "-arch",
+        "arm64",
+      ]
+    }
+
+    cflags += common_mac_flags
+    ldflags += common_mac_flags
+  }
+
+  asmflags = cflags
+}
+
+config("default_include_dirs") {
+  include_dirs = [
+    "//",
+    root_build_dir,
+    "//abi",
+    "//third_party",
+    "//frameworks",
+    "//hardware",
+    "//framework",
+  ]
+}
+
+common_optimize_on_cflags = [
+  # Don't emit the GCC version ident directives, they just end up in the
+  # .comment section taking up binary size.
+  "-fno-ident",
+
+  # Put data and code in their own sections, so that unused symbols
+  # can be removed at link time with --gc-sections.
+  "-fdata-sections",
+  "-ffunction-sections",
+]
+
+common_optimize_on_ldflags = []
+if (!is_mac && !is_ios) {
+  common_optimize_on_ldflags += [
+    "-Wl,--gc-sections",
+  ]
+
+  if (is_debug) {
+    common_optimize_on_ldflags += [
+      "-Wl,-O0",
+    ]
+  } else {
+    common_optimize_on_ldflags += [
+      "-Wl,-O2",
+    ]
+  }
+}
+
+config("default_optimization") {
+  if (is_debug) {
+    configs = [ ":no_optimize" ]
+  } else {
+    configs = [ ":optimize" ]
+  }
+}
+
+config("no_optimize") {
+  if (is_android) {
+    # Even without optimization, we still have to reduce the binary size in
+    # Android build.
+    if (is_clang) {
+      cflags = [ "-Oz" ] + common_optimize_on_cflags
+    } else {
+      cflags = [ "-Os" ] + common_optimize_on_cflags
+    }
+  } else {
+    cflags = [ "-O0" ]
+  }
+}
+
+config("optimize") {
+  if (is_mac || is_ios) {
+    cflags = [ "-Os" ] + common_optimize_on_cflags
+  } else {
+    if (is_debug) {
+      cflags = [ "-O0" ] + common_optimize_on_cflags
+    } else {
+      cflags = [ "-O2" ] + common_optimize_on_cflags
+    }
+  }
+  ldflags = common_optimize_on_ldflags
+}
+
+config("optimize_max") {
+  # TODO(liushouqun): Implement the speed optimization configuration.
+  if (is_debug) {
+    cflags = [ "-O0" ] + common_optimize_on_cflags
+  } else {
+    cflags = [ "-O2" ] + common_optimize_on_cflags
+  }
+
+  ldflags = common_optimize_on_ldflags
+}
+
+config("optimize_speed") {
+  # TODO(liushouqun): Implement the speed optimization configuration.
+  if (is_debug) {
+    cflags = [ "-O0" ] + common_optimize_on_cflags
+  } else {
+    cflags = [ "-O2" ] + common_optimize_on_cflags
+  }
+  ldflags = common_optimize_on_ldflags
+}
+
+config("symbols") {
+  cflags = [ "-g2" ]
+}
+
+config("minimal_symbols") {
+  cflags = [ "-g1" ]
+}
+
+config("no_symbols") {
+  cflags = [ "-g0" ]
+}
+
+config("symbol_visibility_hidden") {
+  cflags = [ "-fvisibility=hidden" ]
+}
+
+config("symbol_visibility_default") {
+  cflags = [ "-fvisibility=default" ]
+}
+
+config("compiler_arm_thumb") {
+  if (current_cpu == "arm" && arm_use_thumb && is_posix && is_android) {
+    cflags = [ "-mthumb" ]
+  }
+}
+
+config("compiler_arm_fpu") {
+  if (current_cpu == "arm" && is_android) {
+    cflags = [ "-mfpu=$arm_fpu" ]
+    asmflags = cflags
+  }
+}
+
+# Common warning setup.
+config("default_warnings") {
+  cflags = []
+  cflags_cc = []
+
+  # Suppress warnings about ABI changes on ARM (Clang doesn't give this
+  # warning).
+  if (current_cpu == "arm" && !is_clang) {
+    cflags += [ "-Wno-psabi" ]
+  }
+
+  cflags += [
+    # Enables.
+    "-Wendif-labels",  # Weird old-style text after an #endif.
+    "-Werror",  # Warnings as errors.
+
+    # Disables.
+    "-Wno-missing-field-initializers",  # "struct foo f = {0};"
+    "-Wno-unused-parameter",  # Unused function parameters.
+  ]
+
+  if (is_clang) {
+    if(is_android || is_linux) {
+      cflags += [
+        "-Wno-tautological-constant-compare", # Clang 7.0 does't complain about this.
+        "-Wno-null-pointer-arithmetic",
+      ]
+    }
+
+    if (is_android) {
+      cflags += [ "-Wno-defaulted-function-deleted" ]
+    }
+  } else {
+    cflags_cc += [
+      # See comment for -Wno-c++11-narrowing.
+      "-Wno-narrowing",
+      "-Wno-type-limits",
+    ]
+
+    # -Wunused-local-typedefs is broken in gcc,
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63872
+    cflags += [ "-Wno-unused-local-typedefs" ]
+
+    # Don't warn about "maybe" uninitialized. Clang doesn't include this
+    # in -Wall but gcc does, and it gives false positives.
+    cflags += [ "-Wno-maybe-uninitialized" ]
+    cflags += [ "-Wno-deprecated-declarations" ]
+
+    # GCC assumes 'this' is never nullptr and optimizes away code
+    # like "if (this == nullptr) ...": [1].  However, some Chromium
+    # code relies on these types of null pointer checks [2], so
+    # disable this optimization.
+    # [1] https://gcc.gnu.org/gcc-6/porting_to.html#this-cannot-be-null
+    # [2] https://crbug.com/784492#c13
+    cflags += [ "-fno-delete-null-pointer-checks" ]
+
+    # -Wcomment gives too many false positives in the case a
+    # backslash ended comment line is followed by a new line of
+    # comments
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61638
+    cflags += [ "-Wno-comments" ]
+  }
+}
+
+config("no_undefined") {
+  if (is_asan || is_msan || is_lsan || is_tsan) {
+    # Asan/msan/lsan/tsan conflicts with shared library 'no-undefined' flag.
+    # See: https://github.com/google/sanitizers/wiki/AddressSanitizer#faq
+    ldflags = []
+  } else if(is_mac || is_ios) {
+    ldflags = []
+  } else {
+    ldflags = [
+      "-Wl,--no-undefined",
+    ]
+  }
+}
+
+config("strict_checks") {
+  cflags = [
+    "-Wall",
+    "-Wextra",
+  ]
+
+  if (is_clang) {
+    cflags += [
+      "-Wheader-hygiene",
+      "-Wstring-conversion",
+      "-Wthread-safety",
+    ]
+    defines = [ "_LIBCPP_ENABLE_THREAD_SAFETY_ANNOTATIONS" ]
+  }
+
+  configs = [ ":default_warnings" ]
+}
+
+config("no_strict_checks") {
+  configs = [ ":default_warnings" ]
+}
+
+config("no_rtti") {
+  cflags_cc = [ "-fno-rtti" ]
+}
+
+config("no_exceptions") {
+  cflags_cc = [ "-fno-exceptions" ]
+}
+
+config("std_c") {
+  if (is_android || is_linux || is_ios || is_mac) {
+    cflags_cc = [ "-std=c++14" ]
+  }
+}

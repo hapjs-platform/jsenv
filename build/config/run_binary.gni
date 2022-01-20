@@ -1,0 +1,25 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+template("run_binary") {
+  action(target_name) {
+    forward_variables_from(invoker, "*", [ "args" ])
+    assert(defined(binary))
+
+    if (!defined(inputs)) {
+      inputs = []
+    }
+
+    inputs += [
+      binary,
+    ]
+
+    script = "//build/gyp/run_binary.py"
+
+    args = [ rebase_path(binary) ]
+
+    if (defined(invoker.args)) {
+      args += invoker.args
+    }
+  }
+}

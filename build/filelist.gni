@@ -1,0 +1,25 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+template("filelist") {
+
+  outfile = "$target_gen_dir/$target_name/filelist" 
+  files = []
+  if (defined(invoker.files)) {
+    files = invoker.files
+  }
+  action(target_name) {
+    script = "//build/filelist.py"
+    inputs = ["//build/filelist.py"]
+    inputs += files
+
+    outputs = [ outfile ]
+
+    args = [
+      rebase_path(outfile, root_build_dir)
+    ]
+    foreach(file, files) {
+      args += [rebase_path(file, root_build_dir)]
+    }
+  }
+}

@@ -1,0 +1,252 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+if (is_android) {
+  import("//build/config/android/rules.gni")
+}
+
+import("//prebuilt.gni")
+
+declare_args() {
+  use_no_v8symbols = true
+  jsenv_version_code = "1.2.0-SNAPSHOT"
+  is_remote_repo = false
+  is_build_for_aar = false
+}
+
+if (is_remote_repo) {
+  is_build_for_aar = true
+}
+
+if (!is_android) {
+  #is_build_for_aar = false
+}
+
+
+shared_library("jsenv") {
+  visibility = ["*"]
+
+  deps = [
+    #"//quickapp_core:quickapp_core_static",
+    #"//frameworks/libjsruntime:jsruntime_static", # to export jsruntime api
+    #"//frameworks/base:mina_base_static",
+    #"//abi/jswrapper:jswrapper_static",
+    #":v8_nosnapshot"
+  ]
+
+  include_dirs = [
+    "$target_gen_dir/include",
+    "src/main/jni/include",
+  ]
+
+  configs += ["$prebuilt_v8/v8:v8_config"]
+  #configs += ["//frameworks/libjsruntime:jsruntime_public"]
+
+  if(use_no_v8symbols) {
+    ldflags = [
+      "-Wl,--version-script=" + rebase_path("//build/config/android/android_only_explicit_jni_exports.lst")
+    ]
+  } else {
+    ldflags = [
+      "-Wl,--version-script=" + rebase_path("//build/config/android/android_all_exports.lst")
+    ]
+  }
+
+  if (target_cpu == "x86") {
+    ldflags += ["-latomic"]
+  }
+
+  cflags = [
+    "-Wno-unused-result",
+    "-Wno-error=empty-body",
+    "-Wno-c++17-extensions",
+    "-Wno-shorten-64-to-32",
+    "-Wno-deprecated-declarations",
+    "-fvisibility=default",
+  ]
+
+
+  if (is_build_for_aar) {
+    deps += [
+      #"//frameworks/libjsruntime/platform/android:jsruntime_jni_static"
+    ]
+
+    #defines = [ "SUPPORT_J2V8RUNTIME" ]
+
+    sources = [
+      "src/main/jni/com_eclipsesource_v8_V8Impl.cpp",
+      "src/main/jni/logcat-console.cpp",
+      "src/main/jni/inspector-proxy.cpp",
+      "src/main/jni/inspector-js-api.cpp",
+      "src/main/jni/jsenv-impl.cpp",
+      "src/main/jni/hybrid-builtins.cpp",
+      "src/main/jni/jsclass.cpp",
+      "src/main/jni/base/time/time.cc"
+    ]
+
+    if (target_cpu == "x86") {
+      sources += [
+        "src/main/jni/builtins/int_lib.h",
+        "src/main/jni/builtins/int_types.h",
+        "src/main/jni/builtins/int_endianness.h",
+        "src/main/jni/builtins/int_util.h",
+        "src/main/jni/builtins/moddi3.c",
+        "src/main/jni/builtins/umoddi3.c",
+        "src/main/jni/builtins/udivmoddi4.c",
+        "src/main/jni/builtins/udivdi3.c",
+      ]
+    }
+  }
+
+  if (is_android) {
+    deps += [
+      "//build/config/android:libc++_shared",
+    ]
+  }
+}
+
+
+if (is_build_for_aar) {
+gen_aar_args = [
+    "--android-home",
+    rebase_path("//third_party/android_tools/sdk", root_build_dir),
+    "--android-ndk-home",
+    rebase_path("//third_party/android_tools/ndk", root_build_dir),
+    "--gradle-dir",
+    rebase_path("gradle", root_build_dir),
+    "--gen-dir",
+    rebase_path(".", root_build_dir),
+  ]
+
+jsenv_name = "jsenv"
+if (is_debug) {
+    gen_aar_args += ["--debug"]
+}
+if (use_no_v8symbols) {
+  jsenv_name = "jsenv-no-v8symbols"
+} else {
+  jsenv_name = "jsenv"
+}
+
+output_aar = ["$root_build_dir/aars/${jsenv_name}.aar"]
+gen_aar_args += [
+  "--output-aar",
+  rebase_path(output_aar[0], root_build_dir),
+  #"--external-java-source-dir",
+  #rebase_path("//frameworks/libjsruntime/platform/android/src/main", root_build_dir),
+]
+
+action("jsenv_aar") {
+  script = "gen_aar.py"
+
+  sources = []
+
+  inputs = [
+    "gen_aar.py",
+    "src/main/AndroidManifest.xml",
+  ]
+
+  native_libs = ["libjsenv.so"]
+  args = gen_aar_args + [
+    "--abi",
+    android_app_abi,
+    "--native-lib-dir",
+    rebase_path(root_build_dir, root_build_dir),
+    "--native-libs"
+   ]
+    + native_libs
+
+  outputs = ["$root_build_dir/aars/jsenv_aar"]
+
+  deps = [
+    ":jsenv",
+    #"//frameworks/libjsruntime/platform/android:jsruntime_java_source"
+  ]
+}
+
+
+action("jsenv_aar_upload") {
+  script = "gen_aar.py"
+
+  sources = []
+
+  inputs = [
+    "gen_aar.py",
+    "src/main/AndroidManifest.xml",
+  ]
+
+  args = gen_aar_args
+        + [
+          "--upload",
+          "--jsenv-version-code",
+          jsenv_version_code,
+          "--is-remote-repo",
+          "${is_remote_repo}",
+        ]
+
+  outputs = ["$root_build_dir/aars/jsenv_aar_upload"]
+}
+
+}
+
+
+#action("jsenv_unittest_js_gen") {
+#  visibility = [":*"]
+
+#  script = "src/main/jni/test/js_gtest_gen.py"
+
+#  inputs = [
+#    "src/main/jni/test/js_gtest_gen.py"
+#  ]
+
+#  sources = [
+#    "src/main/jni/test/class_test1.js"
+#  ]
+
+#  outputs = [
+#    "$target_gen_dir/jsenv_unittest_js_code.cpp"
+#  ]
+
+#  args = [
+#    "-out-file",
+#    rebase_path("$target_gen_dir/jsenv_unittest_js_code.cpp", root_build_dir),
+#  ] + rebase_path(sources, root_build_dir)
+
+#}
+
+#executable("jsenv_unittest") {
+#  visibility = ["*"]
+
+#  testonly = true
+
+#  deps = [
+#    ":jsenv",
+#    ":jsenv_unittest_js_gen",
+    #"//third_party/gtest",
+#  ]
+
+#  include_dirs = [
+#    "src/main/jni/include",
+#    "src/main/jni",
+#    "src/main/jni/test",
+    #"//third_party/gtest/googlemock/include",
+    #"//third_party/gtest/googletest/include/"
+#  ]
+
+#  cflags = [
+#    "-Wno-unused-result",
+#    "-Wno-error=empty-body",
+#    "-Wno-c++17-extensions",
+#    "-Wno-shorten-64-to-32",
+#    "-Wno-deprecated-declarations",
+#    "-fvisibility=default",
+#  ]
+
+#  libs = [ "log" ]
+
+#  sources = [
+#    "src/main/jni/test/jsenv_unittest.cpp",
+#    "src/main/jni/test/test_help.cpp",
+#    "$target_gen_dir/jsenv_unittest_js_code.cpp",
+#  ]
+#}

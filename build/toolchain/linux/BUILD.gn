@@ -1,0 +1,100 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+import("//build/toolchain/gcc_toolchain.gni")
+
+gcc_toolchain("linux_gcc") {
+  cc = "gcc"
+  cxx = "g++"
+  ar = "ar"
+  ld = cxx
+  readelf = "readelf"
+  nm = "nm"
+  strip = "strip"
+
+  toolchain_args = {
+    current_os = "linux"
+    current_cpu = "x86"
+    is_clang = false
+  }
+}
+
+gcc_toolchain("linux_clang") {
+  cc = "clang"
+  cxx = "clang++"
+  ld = cxx
+  readelf = "readelf"
+  ar = "llvm-ar"
+  nm = "nm"
+  strip = "strip"
+
+  toolchain_args = {
+    current_os = "linux"
+    current_cpu = "x64"
+    is_clang = true
+  }
+}
+
+gcc_toolchain("gcc_x86_target_arm") {
+  cc = "gcc"
+  cxx = "g++"
+  ar = "ar"
+  ld = cxx
+  readelf = "readelf"
+  nm = "nm"
+  strip = "strip"
+
+  toolchain_args = {
+    current_cpu = "arm"
+    current_os = "linux"
+    is_clang = false
+  }
+}
+
+gcc_toolchain("gcc_x64_target_arm64") {
+  cc = "gcc"
+  cxx = "g++"
+  ar = "ar"
+  ld = cxx
+  readelf = "readelf"
+  nm = "nm"
+  strip = "strip"
+
+  toolchain_args = {
+    current_cpu = "arm64"
+    current_os = "linux"
+    is_clang = false
+  }
+}
+
+gcc_toolchain("clang_x86_v8_arm") {
+  cc = "clang"
+  cxx = "clang++"
+  ld = cxx
+  readelf = "readelf"
+  ar = "llvm-ar"
+  nm = "nm"
+  strip = "strip"
+
+  toolchain_args = {
+    current_cpu = "arm"
+    current_os = "linux"
+    is_clang = true
+  }
+}
+
+gcc_toolchain("clang_x64_v8_arm64") {
+  cc = "clang"
+  cxx = "clang++"
+  ld = cxx
+  readelf = "readelf"
+  ar = "llvm-ar"
+  nm = "nm"
+  strip = "strip"
+
+  toolchain_args = {
+    current_cpu = "arm64"
+    current_os = "linux"
+    is_clang = true
+  }
+}

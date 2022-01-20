@@ -1,0 +1,67 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+template("interface_gen_cpp") {
+  interface_target_name = "${target_name}_interface_gen_cpp"
+  gen_dir = "${target_gen_dir}/${target_name}"
+
+  action_foreach(interface_target_name) {
+    script = "//build/jidl/jidlgen.py"
+
+    inputs = []
+    package_dir = invoker.package_dir
+    base_dir = invoker.base_dir
+
+    foreach(source, invoker.idls) {
+      inputs += [ "${base_dir}/${package_dir}/${source}" ]
+    }
+
+    sources = inputs
+
+    inputs += [
+      "//build/interfaces/idl/ast.py",
+      "//build/interfaces/idl/__init__.py",
+      "//build/interfaces/idl/lexer.py",
+      "//build/interfaces/idl/loader.py",
+      "//build/interfaces/idl/parser.py",
+      "//build/interfaces/templates/interface.mt",
+      "//build/interfaces/templates/meta.mt"
+    ]
+
+    header_file = "$gen_dir/${package_dir}/{{source_name_part}}.h"
+    source_file = "$gen_dir/${package_dir}/{{source_name_part}}_interface.cc"
+
+    outputs = [
+      header_file,
+      source_file
+    ]
+
+    args = [
+      "../interfaces/cppgen.py",
+      "--idl={{source}}",
+      "--header=" + rebase_path("${header_file}", root_build_dir),
+      "--source=" + rebase_path("${source_file}", root_build_dir),
+    ]
+  }
+
+  gen_outputs = process_file_template(invoker.idls,
+      [
+        "$gen_dir/${invoker.package_dir}/{{source_name_part}}_interface.cc"
+      ])
+
+  config("${target_name}_interface_config") {
+    include_dirs = [ "$gen_dir" ]
+  }
+
+  source_set(target_name) {
+    sources = gen_outputs
+
+    all_dependent_configs = [
+      ":${target_name}_interface_config"
+    ]
+
+    deps = [
+      ":${target_name}_interface_gen_cpp"
+    ]
+  }
+}

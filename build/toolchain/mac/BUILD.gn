@@ -1,0 +1,23 @@
+# Copyright (c) 2013 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# TODO(brettw) Use "gcc_toolchain.gni" like the Linux toolchains. This requires
+# some enhancements since the commands on Mac are slightly different than on
+# Linux.
+
+import("//build/toolchain/mac_toolchain.gni")
+
+mac_toolchain("mac_clang") {
+  toolchain_cpu = "x64"
+  toolchain_os = "mac"
+  ar = "ar"
+  cc = "clang"
+  cxx = "clang++"
+  ld = cxx
+  is_clang = true
+
+  toolchain_args = {
+  }
+  sysroot_flags = "-isysroot $mac_sdk_path"
+}

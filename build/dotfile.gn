@@ -1,0 +1,18 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+buildconfig = "//build/config/BUILDCONFIG.gn"
+
+# The root build file.
+root = "//build/gn"
+
+default_args = {
+  # v8 default configs
+  v8_extra_library_files = []
+  v8_experimental_extra_library_files = []
+  # TODO(liushouqun): Enable v8 snapshot support to speed up the v8 startup.
+  v8_use_snapshot = true
+  v8_use_external_startup_data = false
+  # TODO(liushouqun): Enable i18n support when the icu library is ready.
+  v8_enable_i18n_support = false
+}

@@ -1,0 +1,31 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+group("exe_and_shlib_deps") {
+}
+
+config("default_libs") {
+  if (is_mac) {
+    libs = [
+      "JavaScriptCore.framework",
+      "AppKit.framework",
+      "ApplicationServices.framework",
+      "Carbon.framework",
+      "CoreFoundation.framework",
+      "CoreVideo.framework",
+      "Foundation.framework",
+      "OpenGL.framework",
+      "Security.framework",
+      "IOKit.framework",
+    ]
+  } else if (is_ios) {
+    libs = [
+      "JavaScriptCore.framework",
+      "CoreFoundation.framework",
+      "CoreGraphics.framework",
+      "CoreText.framework",
+      "Foundation.framework",
+      "MobileCoreServices.framework"
+    ]
+  }
+}

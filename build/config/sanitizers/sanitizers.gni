@@ -1,0 +1,25 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+declare_args() {
+  # Address Sanitizer
+  is_asan = false
+  # Leak Sanitizer
+  is_lsan = false
+  # Memory Sanitizer
+  is_msan = false
+  # Thread Sanitizer
+  is_tsan = false
+  # Undfined Behaviour Sanitizer
+  is_ubsan = false
+  is_ubsan_no_recover = false
+  is_ubsan_null = false
+  is_ubsan_vptr = false
+  is_ubsan_security = false
+
+  # CFI(Control Flow Integrity)
+  is_cfi = false
+}
+
+using_sanitizer = is_asan || is_lsan || is_msan || is_tsan || is_ubsan ||
+    is_ubsan_no_recover || is_ubsan_null || is_ubsan_vptr || is_ubsan_security

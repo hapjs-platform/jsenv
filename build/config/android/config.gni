@@ -1,0 +1,112 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+if (is_android) {
+  declare_args() {
+    # Use the Android NDK in the buildtools.
+    android_ndk_root = rebase_path("//third_party/android_tools/ndk")
+
+    # Android API level for 32 bits platforms
+    android32_ndk_api_level = 16
+
+    # Android API level for 64 bits platforms
+    android64_ndk_api_level = 21
+
+    # TODO(liushouqun): Fix this by reading the 'source.properties' file to get version.
+    android_ndk_major_version = 20
+
+    android_sdk_root = rebase_path("//third_party/android_tools/sdk")
+    android_sdk_version = "28"
+    android_sdk_build_tools_version = "27.0.3"
+
+    android_toolchain_root = ""
+    android_toolchain_prefix = ""
+    android_clang_path = ""
+  }
+
+  android_sdk = "${android_sdk_root}/platforms/android-${android_sdk_version}"
+  android_sdk_tools = "${android_sdk_root}/tools"
+  android_sdk_build_tools =
+      "${android_sdk_root}/build-tools/$android_sdk_build_tools_version"
+  android_aapt2_path = "$android_sdk_build_tools/aapt2"
+  android_dx_path = "$android_sdk_build_tools/dx"
+  android_zipalign_path = "$android_sdk_build_tools/zipalign"
+  android_apksigner_path = "$android_sdk_build_tools/apksigner"
+
+  # macOS has different Android sdk tools path.
+  if (host_os == "mac") {
+    android_sdk_tools = "${android_sdk_root}/macos/tools"
+    android_sdk_build_tools =
+        "${android_sdk_root}/macos/build-tools/$android_sdk_build_tools_version"
+  }
+
+  # Path to the SDK's android.jar
+  android_sdk_jar = "$android_sdk/android.jar"
+
+  zipalign_path = "$android_sdk_build_tools/zipalign"
+
+  android_default_keystore_path = "//build/android/chromium-debug.keystore"
+  android_default_keystore_name = "chromiumdebugkey"
+  android_default_keystore_password = "chromium"
+
+  if (android_ndk_root == "") {
+    android_ndk_root = getenv("ANDROID_NDK_ROOT")
+  }
+
+  if (android_ndk_root == "") {
+    assert(false, "Android NDK not found, specify it in the ANDROID_NDK_ROOT")
+  }
+
+  android_toolchain_host_path = ""
+  if (host_os == "linux") {
+    android_toolchain_host_path = "linux-x86_64"
+  } else if (host_os == "mac") {
+    android_toolchain_host_path = "darwin-x86_64"
+  } else if (host_os == "win") {
+    # TODO(liushouqun): add support for windows
+    android_toolchain_host_path = ""
+  } else {
+    assert(false, "Android host platform is not supported.")
+  }
+
+  android_toolchain_root = ""
+  android_toolchain_prefix = ""
+  android_app_abi = ""
+  if (target_cpu == "arm") {
+    android_toolchain_root = android_ndk_root + "/toolchains/arm-linux-androideabi-4.9/prebuilt"
+    android_toolchain_prefix = "arm-linux-androideabi"
+    android_app_abi = "armeabi-v7a"
+  } else if (target_cpu == "arm64") {
+    android_toolchain_root = android_ndk_root + "/toolchains/aarch64-linux-android-4.9/prebuilt"
+    android_toolchain_prefix = "aarch64-linux-android"
+    android_app_abi = "arm64-v8a"
+  } else if (target_cpu == "x86") {
+    android_toolchain_root = android_ndk_root + "/toolchains/x86-4.9/prebuilt"
+    android_toolchain_prefix = "i686-linux-android"
+    android_app_abi = "x86"
+  } else if (target_cpu == "x64") {
+    android_toolchain_root = android_ndk_root + "/toolchains/x86_64-4.9/prebuilt"
+    android_toolchain_prefix = "x86_64-linux-android"
+    android_app_abi = "x86_64"
+  } else {
+    assert(false, "Android target CPU arch is not supported.")
+  }
+
+  # Android C++ configuration
+  android_libcpp_root = "$android_ndk_root/sources/cxx-stl/llvm-libc++"
+  android_libcpp_lib_dir = "${android_libcpp_root}/libs/${android_app_abi}"
+
+  android_libgcc_file = android_toolchain_root + "/" + android_toolchain_host_path + "/lib/gcc/" +
+      android_toolchain_prefix + "/4.9.x/" + "libgcc.a"
+
+  android_toolchain_root = android_toolchain_root + "/" + android_toolchain_host_path
+
+  android_clang_path = android_ndk_root + "/toolchains/llvm/prebuilt/" + android_toolchain_host_path + "/bin"
+
+  android_tool_prefix = "$android_toolchain_root/bin/$android_toolchain_prefix-"
+  android_readelf = "${android_tool_prefix}readelf"
+  android_objcopy = "${android_tool_prefix}objcopy"
+
+  # Set to true to run findbugs on JAR targets.
+  run_findbugs = false
+}

@@ -1,0 +1,48 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+import("//build/config/sanitizers/sanitizers.gni")
+
+config("sanitizer") {
+  assert(is_clang, "Sanitizers only works with clang build.")
+  cflags = []
+  cflags_c = []
+  cflags_cc = []
+  ldflags = []
+  defines = []
+
+  if (using_sanitizer) {
+    cflags += [
+      "-fno-omit-frame-pointer",
+      "-gline-tables-only",
+    ]
+
+    if (is_mac || is_ios) {
+      ldflags += [ "-Wl,-U,_sanitizer_options_link_helper" ]
+    } else {
+      ldflags += [ "-Wl,-u_sanitizer_options_link_helper" ]
+    }
+  }
+
+  if (is_asan) {
+    # Asan conficts with gcov, see: https://bugs.llvm.org/show_bug.cgi?id=26294
+    assert(!is_gcov, "is_asan conficts with is_gcov, only one of them can be set.")
+    cflags += [ "-fsanitize=address" ]
+    ldflags += [ "-fsanitize=address" ]
+  }
+
+  if (is_lsan) {
+    cflags += [ "-fsanitize=leak" ]
+    ldflags += [ "-fsanitize=leak" ]
+  }
+
+  if (is_msan) {
+    cflags += [ "-fsanitize=memory" ]
+    ldflags += [ "-fsanitize=memory" ]
+  }
+
+  if (is_tsan) {
+    cflags += [ "-fsanitize=thread" ]
+    ldflags += [ "-fsanitize=thread" ]
+  }
+}

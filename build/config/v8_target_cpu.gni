@@ -1,0 +1,14 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+declare_args() {
+  v8_target_cpu = ""
+}
+
+if (v8_target_cpu == "") {
+  v8_target_cpu = target_cpu
+}
+
+declare_args() {
+  v8_current_cpu = v8_target_cpu
+}

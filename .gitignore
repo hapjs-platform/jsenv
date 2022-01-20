@@ -1,0 +1,9 @@
+third_party
+.gradle/
+.idea/
+.DS_Store
+*.log
+out.gn
+jniLibs
+*.swp
+*.pyc

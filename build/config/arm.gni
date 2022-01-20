@@ -1,0 +1,97 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+import("//build/config/v8_target_cpu.gni")
+
+if (current_cpu == "arm" || v8_current_cpu == "arm")  {
+  declare_args() {
+    arm_version = 7
+    arm_arch = ""
+    arm_fpu = ""
+    arm_float_abi = ""
+    arm_tune = ""
+    arm_use_neon = ""
+    arm_optionally_use_neon = ""
+    # TODO(yuyifei): disable on default if this is inappropriate.
+    arm_use_thumb = true
+  }
+
+  if (arm_use_neon == "") {
+    if (current_os == "linux") {
+      arm_use_neon = false
+    } else {
+      arm_use_neon = true
+    }
+  }
+
+  if (arm_version == 6) {
+    if (arm_arch == "") {
+      arm_arch = "armv6"
+    }
+    if (arm_tune != "") {
+      arm_tune = ""
+    }
+    if (arm_float_abi == "") {
+      arm_float_abi = "softfp"
+    }
+    if (arm_fpu == "") {
+      arm_fpu = "vfp"
+    }
+    arm_use_thumb = false
+    arm_use_neon = false
+  } else if (arm_version == 7){
+    if (arm_arch == "") {
+      arm_arch = "armv7-a"
+    }
+    if (arm_tune == "") {
+      arm_tune = "generic-armv7-a"
+    }
+
+    if (arm_float_abi == "") {
+      if (current_os == "android") {
+        arm_float_abi = "softfp"
+      } else if (target_os == "android") {
+        arm_float_abi = "softfp"
+      } else if (current_os == "linux") {
+        # Default to the same as Android for V8 simulator builds.
+        arm_float_abi = "softfp"
+      } else {
+        arm_float_abi = "hard"
+      }
+    }
+
+    if (arm_fpu == "") {
+      if (arm_use_neon) {
+        arm_fpu = "neon"
+      } else {
+        arm_fpu = "vfpv3-d16"
+      }
+    }
+  } else if (arm_version == 8) {
+    if (arm_arch == "") {
+      arm_arch = "armv8-a"
+    }
+    if (arm_tune == "") {
+      arm_tune = "generic-armv8-a"
+    }
+
+    if (arm_float_abi == "") {
+      if (current_os == "android" || target_os == "android") {
+        arm_float_abi = "softfp"
+      } else {
+        arm_float_abi = "hard"
+      }
+    }
+
+    if (arm_fpu == "") {
+      if (arm_use_neon) {
+        arm_fpu = "neon"
+      } else {
+        arm_fpu = "vfpv3-d16"
+      }
+    }
+  }
+} else if (current_cpu == "arm64") {
+  arm_float_abi = "hard"
+  arm_use_neon = true
+}

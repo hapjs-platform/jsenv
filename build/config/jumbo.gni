@@ -1,0 +1,16 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+declare_args() {
+  use_jumbo_build = false
+}
+
+template("jumbo_source_set") {
+  target("source_set", target_name) {
+    forward_variables_from(invoker, "*")
+  }
+}
+
+set_defaults("jumbo_source_set") {
+  configs = default_compiler_configs
+}

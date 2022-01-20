@@ -1,0 +1,14 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+# Linker script that exports only JNI_OnLoad etc. 
+# Should be used for libraries that do explicit JNI registration.
+
+{
+  global:
+    JNI_OnLoad;
+    Java_com_eclipsesource_*;
+    get_jsenv;
+  local:
+    *;
+};

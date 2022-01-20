@@ -1,0 +1,34 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+assert(is_linux)
+
+config("compiler") {
+  cflags = []
+  cflags_c = []
+  cflags_cc = []
+  defines = []
+  ldflags = [
+    "-Wl,--rpath=\$ORIGIN/.",
+    "-Wl,--rpath-link=."
+  ]
+}
+
+config("gcov") {
+    cflags_c = []
+    cflags_cc = []
+    ldflags = []
+
+    cflags_c += [
+        "-ftest-coverage",
+        "-fprofile-arcs",
+    ]
+    cflags_cc += [
+        "-ftest-coverage",
+        "-fprofile-arcs",
+    ]
+    ldflags += [
+        "-ftest-coverage",
+        "-fprofile-arcs",
+    ]
+}

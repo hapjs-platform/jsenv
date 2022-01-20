@@ -1,0 +1,182 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+template("compile_java") {
+  assert(defined(invoker.standalone))
+
+  _jar_path_file = "$target_gen_dir/$target_name/JAR_PATH"
+
+  generated_file("${target_name}__jar_path") {
+    forward_variables_from(invoker, [ "deps", "public_deps" ])
+    outputs = [ _jar_path_file ]
+    data_keys = [ "jar_path" ]
+    walk_keys = [ "jar_path_barrier" ]
+  }
+
+  action(target_name) {
+    forward_variables_from(invoker, [ "jar_name",
+                                      "jar_dir",
+                                      "jar_path",
+                                      "sources",
+                                      "source_jars",
+                                      "source_dirs",
+                                      "jar_paths",
+                                      "bootclasspath",
+                                      "main_class",
+                                      "standalone",
+                                      "inputs",
+                                      "deps",
+                                      "public_deps",
+                                      "testonly" ])
+
+    if (!defined(jar_path)) {
+      if (!defined(jar_name)) {
+        jar_name = target_name
+      }
+
+      if (!defined(jar_dir)) {
+        _target_dir_name = get_label_info(":$target_name", "dir")
+        jar_dir = "$root_out_dir/lib.java/$_target_dir_name/$target_name"
+      }
+
+      jar_path = "$jar_dir/$jar_name.jar"
+    }
+
+    if (!defined(deps)) {
+      deps = []
+    }
+
+    deps += [
+      ":${target_name}__jar_path"
+    ]
+
+    if (!defined(inputs)) {
+      inputs = []
+    }
+
+    if (defined(source_jars)) {
+      inputs += source_jars
+    }
+
+    if (defined(jar_paths)) {
+      inputs += jar_paths
+    }
+
+    inputs += [ _jar_path_file ]
+
+    if (defined(bootclasspath)) {
+      inputs += [ bootclasspath ]
+    }
+
+    depfile = "$target_gen_dir/$target_name.d"
+
+    outputs = [
+      jar_path
+    ]
+
+    script = "//build/gyp/compile_java.py"
+
+    args = [
+      "--output", rebase_path(jar_path, root_build_dir),
+    ]
+
+    if (defined(sources)) {
+      foreach(source, sources) {
+        args += [
+          "--source-file", rebase_path(source, root_build_dir),
+        ]
+      }
+    }
+
+    if (defined(source_jars)) {
+      foreach(source_jar, source_jars) {
+        args += [
+          "--source-jar", rebase_path(source_jar, root_build_dir),
+        ]
+      }
+    }
+
+    if (defined(source_dirs)) {
+      foreach(source_dir, source_dirs) {
+        args += [
+          "--source-dir", rebase_path(source_dir, root_build_dir),
+        ]
+      }
+    }
+
+    if (defined(jar_paths)) {
+      foreach(jar_path, jar_paths) {
+        args += [
+          "--jar-path", rebase_path(jar_path, root_build_dir),
+        ]
+      }
+    }
+
+    args += [
+      "--jar-path-file", rebase_path(_jar_path_file, root_build_dir),
+    ]
+
+    if (defined(bootclasspath)) {
+      args += [
+        "--bootclasspath", rebase_path(bootclasspath, root_build_dir),
+      ]
+    }
+
+    if (defined(main_class)) {
+      args += [
+        "--main-class", main_class,
+      ]
+    }
+
+    if (standalone) {
+      args += [
+        "--standalone",
+      ]
+    }
+
+    args += [
+      "--depfile", rebase_path(depfile, root_build_dir),
+    ]
+
+    metadata = {
+      jar_path = [ rebase_path(jar_path, root_build_dir) ]
+    }
+
+    if (standalone) {
+      metadata.jar_path_barrier = []
+    }
+  }
+
+}
+
+
+template("java_library") {
+  compile_java(target_name) {
+    forward_variables_from(invoker, "*")
+    if (!defined(standalone)) {
+      standalone = false
+    }
+  }
+}
+
+template("java_binary") {
+  compile_java(target_name) {
+    forward_variables_from(invoker, "*")
+    if (!defined(standalone)) {
+      standalone = true
+    }
+    if (!defined(jar_path) && !defined(jar_dir)) {
+      jar_dir = "$root_out_dir/bin.java"
+    }
+  }
+}
+
+template("java_prebuilt") {
+  group(target_name) {
+    forward_variables_from(invoker, "*")
+    assert(defined(jar_path))
+    metadata = {
+      jar_path = [ rebase_path(jar_path, root_build_dir) ]
+    }
+  }
+}

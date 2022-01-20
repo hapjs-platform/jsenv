@@ -1,0 +1,17 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+declare_args() {
+  java_home = ""
+}
+
+if (java_home == "") {
+  java_home = getenv("JAVA_HOME")
+}
+
+if (java_home == "") {
+  _javac_path = exec_script("//build/bin_path.py", [ "javac" ], "string")
+  if (_javac_path != "") {
+    java_home = rebase_path(_javac_path + "/../..")
+  }
+}

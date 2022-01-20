@@ -1,0 +1,22 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+assert(is_mac)
+
+config("compiler") {
+  cflags = []
+  cflags_c = []
+  cflags_cc = ["-std=c++14"]
+  defines = []
+  ldflags = []
+}
+
+config("mac_dynamic_flags") {
+  ldflags = [ "-Wl,-ObjC" ]
+
+  ldflags += [
+    "-Wl,-rpath,@loader_path/.",
+    # Shared library shared path, based on XX.app/Contents/MacOS
+    "-Wl,-rpath,@loader_path/../../..",
+  ]
+}

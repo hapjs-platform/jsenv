@@ -1,0 +1,41 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+template("jsenv_test") {
+  executable(target_name) {
+    # All tests should enable 'testonly'.
+    testonly = true
+    deps = []
+
+    forward_variables_from(invoker, "*")
+
+    deps += [
+      "//third_party/gtest:gmock",
+      "//third_party/gtest:gtest",
+    ]
+
+    if (is_linux && is_gcov) {
+      configs += ["//build/config/linux:gcov"]
+    }
+  }
+}
+
+template("jsenv_smoke_test") {
+  executable(target_name) {
+    testonly = true
+
+    forward_variables_from(invoker, "*")
+  }
+}
+
+set_defaults("test") {
+  configs = default_executable_configs
+}
+
+set_defaults("jsenv_test") {
+  configs = default_executable_configs
+}
+
+set_defaults("jsenv_smoke_test") {
+  configs = default_executable_configs
+}

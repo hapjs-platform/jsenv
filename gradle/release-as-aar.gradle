@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2021, the hapjs-platform Project Contributors
+ * SPDX-License-Identifier: EPL-1.0
+ */
+
+apply plugin: 'maven'
+
+def JSENV_VERSION_CODE = project.properties['jsenvVersionCode']
+def ARTIFACT_ID = project.properties['jsenvOutputAarName']
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            if (project.properties['isRemoteRepo'] == 'true') {
+                def repoUsername = System.getenv('repoUsername')
+                def repoPassword =  System.getenv('repoPassword')
+                def repoUrl = releaseRepoUrl
+                if (JSENV_VERSION_CODE.endsWith('-SNAPSHOT')) {
+                    repoUrl = snapshotRepoUrl
+                }
+
+                repository(url: repoUrl) {
+                    authentication(userName: repoUsername, password: repoPassword)
+                }
+            } else {
+                repository(url: mavenLocal().url)
+            }
+
+            pom.project {
+                groupId repoGroup
+                artifactId ARTIFACT_ID
+                version JSENV_VERSION_CODE
+                packaging 'aar'
+                description 'update version jsenv version'
+            }
+        }
+    }
+}

@@ -1,0 +1,23 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+#        node-version: [13.x]
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+#    - name: Use Node.js ${{ matrix.node-version }}
+#      uses: actions/setup-node@v1
+#      with:
+#        node-version: ${{ matrix.node-version }}
+    - name: Environment Information
+      run: npx envinfo
+    - run: yarn
+    - name: Run Test
+      run: yarn test

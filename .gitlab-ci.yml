@@ -1,0 +1,55 @@
+image: quickapp/v8-build:200513
+
+stages:
+  - build
+  - release
+
+before_script:
+  - curl -o /tmp/git-lfs.deb -s http://archive.ubuntu.com/ubuntu/pool/universe/g/git-lfs/git-lfs_2.9.2-1_amd64.deb
+  - dpkg -i /tmp/git-lfs.deb
+
+build:
+  stage: build
+  except:
+    - tags
+  script:
+    - cd /root/v8
+    - git checkout remotes/origin/8.3-lkgr
+    - cd $CI_PROJECT_DIR
+    - git lfs install
+    - git lfs pull
+    - tar -xf v8-build-0.0.5.tgz
+    - mkdir -p third_party/android_tools/
+    - ln -s /root/v8/third_party/android_ndk third_party/android_tools/ndk
+    - ln -s /root/v8/third_party/android_sdk/public third_party/android_tools/sdk
+    - ln -s /root/v8/third_party/depot_tools third_party/depot_tools
+    - echo "1. Build jsenv.aar."
+    - python3 build_upload.py --version $CI_COMMIT_TAG --release
+  artifacts:
+    paths:
+      - /root/.gradle
+    expire_in: 2 weeks
+  tags:
+    - docker
+
+release:
+  stage: release
+  only:
+    - tags
+  script:
+    - cd /root/v8
+    - git checkout remotes/origin/8.3-lkgr
+    - cd $CI_PROJECT_DIR
+    - git lfs install
+    - git lfs pull
+    - tar -xf v8-build-0.0.5.tgz
+    - mkdir -p third_party/android_tools/
+    - ln -s /root/v8/third_party/android_ndk third_party/android_tools/ndk
+    - ln -s /root/v8/third_party/android_sdk/public third_party/android_tools/sdk
+    - ln -s /root/v8/third_party/depot_tools third_party/depot_tools
+    - echo "Upload Release jsenv.aar to Maven."
+    - python3 build_upload.py --version $CI_COMMIT_TAG --release --upload
+    - echo "Upload Snapshot jsenv.aar to Maven."
+    - python3 build_upload.py --version $CI_COMMIT_TAG --release --upload --test
+  tags:
+    - docker

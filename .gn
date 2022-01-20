@@ -1,0 +1,9 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+buildconfig = "//build/config/BUILDCONFIG.gn"
+secondary_source = "//secondary/"
+
+default_args = {
+  js_use_vm_locker = true
+}

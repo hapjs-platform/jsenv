@@ -1,0 +1,50 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+import("//build/config/android/config.gni")
+import("//build/toolchain/gcc_toolchain.gni")
+
+template("android_gcc") {
+  gcc_toolchain(target_name) {
+    assert(defined(invoker.toolchain_args),
+           "toolchain_args must be defined for android_gcc()")
+    toolchain_args = invoker.toolchain_args
+
+    if (is_clang) {
+      cc = android_clang_path + "/" + "clang"
+      cxx = android_clang_path + "/" + "clang++"
+    } else{
+      cc = android_toolchain_root + "/bin/" + android_toolchain_prefix + "-gcc"
+      cxx = android_toolchain_root + "/bin/" + android_toolchain_prefix + "-g++"
+    }
+    ld = cxx
+    readelf = android_toolchain_root + "/bin/" + android_toolchain_prefix + "-readelf"
+    nm = android_toolchain_root + "/bin/" + android_toolchain_prefix + "-nm"
+    ar = android_toolchain_root + "/bin/" + android_toolchain_prefix + "-ar"
+    strip = android_toolchain_root + "/bin/" + android_toolchain_prefix + "-strip"
+  }
+}
+
+android_gcc("android_gcc_x86") {
+  toolchain_args = {
+    current_cpu = "x86"
+  }
+}
+
+android_gcc("android_gcc_arm") {
+  toolchain_args = {
+    current_cpu = "arm"
+  }
+}
+
+android_gcc("android_gcc_x64") {
+  toolchain_args = {
+    current_cpu = "x64"
+  }
+}
+
+android_gcc("android_gcc_arm64") {
+  toolchain_args = {
+    current_cpu = "arm64"
+  }
+}

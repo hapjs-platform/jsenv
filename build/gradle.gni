@@ -1,0 +1,228 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+import("//build/config/android/rules.gni")
+
+template("apk_gen") {
+  project = invoker.project
+  source_dir = "$project/src/main"
+  if (defined(invoker.source_dir)) {
+    source_dir = invoker.source_dir
+  }
+
+  java_sources = []
+  if (defined(invoker.java_sources)) {
+    foreach(i, invoker.java_sources) {
+      java_sources += [ "$source_dir/java/$i" ]
+    }
+  }
+
+  android_manifest = "$source_dir/AndroidManifest.xml"
+  if (defined(invoker.android_manifest)) {
+    android_manifest = invoker.android_manifest
+  }
+
+  if (defined(invoker.external_java_sources)) {
+    java_sources += invoker.external_java_sources
+  }
+
+  native_libs = []
+  if (defined(invoker.native_libs)) {
+    native_libs = invoker.native_libs
+  }
+
+  gradle_dir = "."
+  if (defined(invoker.gradle_dir)) {
+    gradle_dir = invoker.gradle_dir
+  }
+
+  action(target_name) {
+    script = "//build/build_gradle.py"
+    inputs = [ script ]
+    inputs += java_sources
+    inputs += [ android_manifest ]
+
+    if (defined(invoker.jidl_sources)) {
+      inputs += [
+        "//build/jidl/jidlgensource.py",
+        "//build/jidl/ast.py",
+        "//build/jidl/javagrammar.py",
+        "//build/jidl/java_source.mt",
+      ]
+      inputs += invoker.jidl_sources
+    }
+
+    apk_name = "${project}.apk"
+    if (defined(invoker.apk_name)) {
+      apk_name = invoker.apk_name
+    }
+
+    outputs = ["$root_build_dir/apks/$apk_name"]
+
+    args = []
+
+    if (is_debug) {
+      args += ["--debug"]
+    }
+
+    args += [
+      "--build-apk",
+      "--abi",
+      android_app_abi,
+      "--android-home",
+      rebase_path("//third_party/android_tools/sdk", root_build_dir),
+      "--android-ndk-home",
+      rebase_path("//third_party/android_tools/ndk", root_build_dir),
+      "--project",
+      project,
+      "--gradle-dir",
+      rebase_path(gradle_dir, root_build_dir),
+      "--gen-dir",
+      rebase_path(target_gen_dir, root_build_dir),
+      "--out-dir",
+      rebase_path(root_build_dir, root_build_dir),
+      "--native-lib-dir",
+      rebase_path(root_build_dir, root_build_dir),
+      "--output-aar-dir",
+      rebase_path("$root_build_dir/aars", root_build_dir),
+      "--apk-name",
+      apk_name,
+      "--output-apk",
+      rebase_path(outputs[0], root_build_dir),
+      "--native-libs"
+    ] + native_libs
+
+    if (defined(invoker.assets)) {
+      args += [
+        "--assets"
+      ]
+      args += rebase_path(invoker.assets, root_build_dir)
+    }
+
+    if (defined(invoker.jidl_sources)) {
+      args += [
+        "--jidl-sources"
+      ]
+      args += rebase_path(invoker.jidl_sources, root_build_dir)
+      args += [ "--jidl-package", invoker.jidl_package ]
+    }
+
+    deps = []
+    if (defined(invoker.deps)) {
+      deps += invoker.deps
+    }
+  }
+}
+
+template("aar_gen") {
+  project = invoker.project
+  source_dir = "$project/src/main"
+  if (defined(invoker.source_dir)) {
+    source_dir = invoker.source_dir
+  }
+
+  java_sources = []
+  if (defined(invoker.java_sources)) {
+    foreach(i, invoker.java_sources) {
+      java_sources += ["$source_dir/java/$i"]
+    }
+  }
+
+  android_manifest = "$source_dir/AndroidManifest.xml"
+  if (defined(invoker.android_manifest)) {
+    android_manifest = invoker.android_manifest
+  }
+
+  if (defined(invoker.external_java_sources)) {
+    java_sources += invoker.external_java_sources
+  }
+
+  native_libs = []
+  if (defined(invoker.native_libs)) {
+    native_libs = invoker.native_libs
+  }
+
+  gradle_dir = "."
+  if (defined(invoker.gradle_dir)) {
+    gradle_dir = invoker.gradle_dir
+  }
+
+  action(target_name) {
+    script = "//build/build_gradle.py"
+
+    inputs = []
+    inputs += java_sources
+    inputs += [ android_manifest ]
+
+    if (defined(invoker.jidl_sources)) {
+      inputs += [
+        "//build/jidl/jidlgensource.py",
+        "//build/jidl/ast.py",
+        "//build/jidl/javagrammar.py",
+        "//build/jidl/java_source.mt",
+      ]
+      inputs += invoker.jidl_sources
+    }
+
+
+    aar_name = "${project}.aar"
+    if (defined(invoker.aar_name)) {
+      aar_name = invoker.aar_name
+    }
+
+    outputs = ["$root_build_dir/aars/$aar_name"]
+
+    args = []
+
+    if (is_debug) {
+      args += ["--debug"]
+    }
+
+    args += [
+      "--build-aar",
+      "--abi",
+      android_app_abi,
+      "--android-home",
+      rebase_path("//third_party/android_tools/sdk", root_build_dir),
+      "--android-ndk-home",
+      rebase_path("//third_party/android_tools/ndk", root_build_dir),
+      "--project",
+      project,
+      "--aar-name",
+      aar_name,
+      "--gradle-dir",
+      rebase_path(gradle_dir, root_build_dir),
+      "--gen-dir",
+      rebase_path(target_gen_dir, root_build_dir),
+      "--out-dir",
+      rebase_path(root_build_dir, root_build_dir),
+      "--native-lib-dir",
+      rebase_path(root_build_dir, root_build_dir),
+      "--output-aar-dir",
+      rebase_path("$root_build_dir/aars", root_build_dir),
+      "--output-aar",
+      rebase_path(outputs[0], root_build_dir),
+      "--native-libs"
+    ] + native_libs
+
+    if (defined(invoker.assets)) {
+      args += [
+          "--assets",
+          rebase_path(invoker.assets, root_build_dir)
+        ]
+    }
+
+    if (defined(invoker.jidl_sources)) {
+      args += [
+        "--jidl-sources"
+      ]
+      args += rebase_path(invoker.jidl_sources, root_build_dir)
+      args += [ "--jidl-package", invoker.jidl_package ]
+    }
+
+    deps = []
+    if (defined(invoker.deps)) {
+      deps += invoker.deps
+    }
+  }
+}

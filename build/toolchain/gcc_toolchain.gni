@@ -1,0 +1,174 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+template("gcc_toolchain") {
+
+  toolchain(target_name) {
+    object_subdir = "{{target_out_dir}}/{{label_name}}"
+
+    assert(defined(invoker.cc), "cc MUST be specified")
+    assert(defined(invoker.cxx), "cxx MUST be specified")
+    assert(defined(invoker.ar), "ar MUST be specified")
+    assert(defined(invoker.ld), "ld MUST be specified")
+    assert(defined(invoker.readelf), "readelf MUST be specified")
+    assert(defined(invoker.nm), "nm MUST be specified")
+
+    cc = invoker.cc
+    cxx = invoker.cxx
+    ar = invoker.ar
+    ld = invoker.ld
+    readelf = invoker.readelf
+    nm = invoker.nm
+
+    if (defined(invoker.strip)) {
+      use_strip = true
+      strip = invoker.strip
+    } else {
+      use_strip = false
+    }
+
+    if (defined(invoker.asm)) {
+      asm = invoker.asm
+    } else {
+      asm = cc
+    }
+
+    invoker_toolchain_args = invoker.toolchain_args
+    toolchain_args = {
+      forward_variables_from(invoker_toolchain_args, "*")
+
+      host_toolchain = host_toolchain
+    }
+
+    if (defined(invoker.solink_libs_section_prefix)) {
+      solink_libs_section_prefix = invoker.solink_libs_section_prefix
+    } else {
+      solink_libs_section_prefix = ""
+    }
+
+    if (defined(invoker.solink_libs_section_postfix)) {
+      solink_libs_section_postfix = invoker.solink_libs_section_postfix
+    } else {
+      solink_libs_section_postfix = ""
+    }
+
+    # These library switches can apply to all tools below.
+    lib_dir_switch = "-L"
+    lib_switch = "-l"
+
+    tool("asm") {
+      depfile = "{{output}}.d"
+      command = "$asm -MMD -MF $depfile {{defines}} {{include_dirs}} {{asmflags}} -c {{source}} -o {{output}}"
+      depsformat = "gcc"
+      description = "ASM {{output}}"
+      outputs = [
+        "$object_subdir/{{source_name_part}}.o"
+      ]
+    }
+
+    tool("cc") {
+      depfile = "{{output}}.d"
+      command = "$cc -MMD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_c}} -c {{source}} -o {{output}}"
+      depsformat = "gcc"
+      description = "CC {{output}}"
+      outputs = [
+        "$object_subdir/{{source_name_part}}.o"
+      ]
+    }
+
+    tool("copy") {
+      command = "ln -f {{source}} {{output}} 2>/dev/null || (rm -rf {{output}} && cp -af {{source}} {{output}})"
+      description = "COPY {{source}} {{output}}"
+    }
+
+    tool("cxx") {
+      depfile = "{{output}}.d"
+      command = "$cxx -MMD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_c}} {{cflags_cc}} -c {{source}} -o {{output}}"
+      depsformat = "gcc"
+      description = "CC {{output}}"
+      outputs = [
+        "$object_subdir/{{source_name_part}}.o"
+      ]
+    }
+
+    tool("alink") {
+      default_output_dir = "{{root_out_dir}}"
+      command = "rm -f {{output}} && $ar rcs {{output}} {{inputs}}"
+      description = "AR {{output}}"
+      outputs = [
+        "{{target_out_dir}}/{{target_output_name}}{{output_extension}}",
+      ]
+      default_output_extension = ".a"
+      output_prefix = "lib"
+    }
+
+    tool("link") {
+      default_output_dir = "{{root_out_dir}}"
+      exefile = "{{output_dir}}/{{target_output_name}}{{output_extension}}"
+      rspfile = "$exefile.rsp"
+      unstripped_exefile = exefile
+      if (use_strip) {
+        unstripped_exefile = "{{root_out_dir}}/exe.unstripped/{{target_output_name}}{{output_extension}}"
+      }
+      command = "$ld {{ldflags}} -o \"$unstripped_exefile\" -Wl,--Map=\"$unstripped_exefile.map\" -Wl,--start-group @\"$rspfile\" {{solibs}} -Wl,--end-group {{libs}}"
+      rspfile_content = "{{inputs}}"
+      if (use_strip) {
+        command += " && $strip --strip-all \"$unstripped_exefile\" -o \"$exefile\""
+      }
+      outputs = [
+        exefile,
+      ]
+      if (exefile!= unstripped_exefile) {
+        outputs += [ unstripped_exefile ]
+      }
+      description = "LINK {{output}}"
+    }
+
+    tool("solink") {
+      default_output_dir = "{{root_out_dir}}"
+      soname = "{{target_output_name}}{{output_extension}}"
+      sofile = "{{output_dir}}/$soname"
+      rspfile = sofile + ".rsp"
+      tocfile = sofile + ".TOC"
+      temporary_tocname = sofile + ".tmp"
+      unstripped_sofile = sofile
+      if (use_strip) {
+        unstripped_sofile = "{{root_out_dir}}/lib.unstripped/{{target_output_name}}{{output_extension}}"
+      }
+
+      link_command = "$ld -shared {{ldflags}} -o $unstripped_sofile -Wl,--build-id -Wl,-soname=$soname @$rspfile"
+      toc_command = "{ $readelf -d $unstripped_sofile | grep SONAME ; $nm -gD -f p $unstripped_sofile | cut -f1-2 -d' '; } > $temporary_tocname"
+      replace_command = "if ! cmp -s $temporary_tocname $tocfile; then mv $temporary_tocname $tocfile; fi"
+      command = "$link_command && $toc_command && $replace_command"
+      rspfile_content = "-Wl,--whole-archive {{inputs}} {{solibs}} -Wl,--no-whole-archive $solink_libs_section_prefix {{libs}} $solink_libs_section_postfix"
+
+      default_output_extension = ".so"
+      output_prefix = "lib"
+
+      if (use_strip) {
+        command += " && $strip --strip-all \"$unstripped_sofile\" -o \"$sofile\""
+      }
+
+      outputs = [
+        sofile,
+        tocfile,
+      ]
+
+      if (sofile != unstripped_sofile) {
+        outputs += [ unstripped_sofile ]
+      }
+
+      description = "SOLINK $sofile"
+    }
+
+    tool("stamp") {
+      command = "touch {{output}}"
+      description = "STAMP {{output}}"
+    }
+
+    tool("copy") {
+      command = "ln -f {{source}} {{output}} 2>/dev/null || (rm -rf {{output}} && cp -af {{source}} {{output}})"
+      description = "COPY {{source}} {{output}}"
+    }
+  }
+}

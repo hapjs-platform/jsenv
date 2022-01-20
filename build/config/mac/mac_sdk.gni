@@ -1,0 +1,15 @@
+# Copyright 2015 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+declare_args() {
+  # SDK path to use. When empty this will use the default SDK based on the
+  # value of use_ios_simulator.
+  mac_sdk_path = ""
+}
+
+if (mac_sdk_path == "") {
+  _mac_sdk_result =
+        exec_script("mac_sdk.py", [], "list lines")
+  mac_sdk_path = _mac_sdk_result[0]
+}

@@ -1,0 +1,13 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+import("//build/config/java/config.gni")
+
+config("compiler") {
+  if (is_linux && !is_android) {
+    include_dirs = [
+      "$java_home/include",
+      "$java_home/include/linux",
+    ]
+  }
+}

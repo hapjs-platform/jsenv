@@ -1,0 +1,49 @@
+# Copyright (c) 2021, the hapjs-platform Project Contributors
+# SPDX-License-Identifier: EPL-1.0
+
+group("jsenv_test") {
+  testonly = true
+
+  deps = [
+    "//external/skia:skia_tests",
+    "//frameworks/base:base_unittests",
+    "//frameworks/cmds/quickapp:quickapp",
+    "//frameworks/libjsruntime:jsruntime_samples",
+    "//frameworks/libui",
+    "//external/libcurl",
+    "//frameworks/net:net_download_test",
+  ]
+
+  if (is_linux || is_android) {
+    deps += [
+      "//abi/jswrapper:jswrapper_tests",
+      "//external/v8:gn_all",
+      # TODO(lijianbin3): mac的编译尚未支持
+      "//external/openssl:libssl",
+      "//external/openssl:libcrypto",
+    ]
+  }
+
+  if (is_android) {
+    deps += [
+      "//build/config/android:libc++_shared",
+      "//external/expat:expat",
+      "//external/icu:libicuuc",
+      "//external/libpng",
+      "//external/zlib",
+    ]
+
+    if (is_android) {
+      deps += [
+        "//frameworks/cmds/quickapp/platform/android:quickapp_group",
+        "//frameworks/cmds/quickapp/platform/flutter:quickapp_group_flutter",
+      ]
+    }
+  }
+
+  if (is_mac || is_ios) {
+    deps += [
+      "//abi//jswrapper:jswrapper_tests"
+    ]
+  }
+}
