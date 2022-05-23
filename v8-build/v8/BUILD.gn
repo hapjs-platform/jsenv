@@ -1,0 +1,29 @@
+if (is_debug) {
+  build_type = "debug"
+} else {
+  build_type = "release"
+}
+
+import("$target_os/$target_cpu/$build_type/v8_objects.gni")
+
+config("v8_config") {
+  include_dirs = [
+    "include",
+    "./src",
+  ]
+
+  libs = []
+  foreach(obj, v8_objects) {
+   libs += [ "$target_os/$target_cpu/$build_type/$obj"]
+  }
+
+  defines = [
+    "V8_31BIT_SMIS_ON_64BIT_ARCH",
+    "V8_DEPRECATION_WARNINGS",
+    "BUILDING_V8_SHARED",
+  ]
+
+  if (target_cpu == "arm64" || target_cpu == "x64") {
+    defines += ["V8_COMPRESS_POINTERS"]
+  }
+}

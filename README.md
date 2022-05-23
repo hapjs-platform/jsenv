@@ -9,31 +9,33 @@ Public GN documents can be found at: [https://chromium.googlesource.com/chromium
   docker pull quickapp/v8-build:200513
 ```
 
-## 2. Get lfs file.
-v8-build-0.0.5.tgz is a v8 static library which compiled from the
-v8:8.3-lkgr-SNAPSHOT of V8 with v8-build-patch.
-For more information about patch, you can view v8-build-patch directory. 
+## 2. build v8
 ```
-git clone [jsenv-runtime.git]
-git lfs install
-git lfs pull
-tar -xf v8-build-0.0.5.tgz
+export CI_PROJECT_DIR="/root/jsenv-runtime"
+cd /root/v8
+git checkout remotes/origin/8.3-lkgr
+cp -R /root/v8/include $CI_PROJECT_DIR/v8-build/v8
+cd $CI_PROJECT_DIR/v8-build/v8/src
+python build_v8.py --target android --v8-source /root/v8 --remote-branch remotes/origin/8.3-lkgr
 ```
-
 ## 3. Link third_party.
+```
+cd $CI_PROJECT_DIR
+mkdir -p third_party/android_tools/
 ln -s /root/v8/third_party/android_ndk third_party/android_tools/ndk
 ln -s /root/v8/third_party/android_sdk/public third_party/android_tools/sdk
 ln -s /root/v8/third_party/depot_tools third_party/depot_tools
+```
 
 ## 4. Build jsenv.
 
 * Only build jsenv.
 ```
-  python3 build/build_upload.py --test --version [jsenv-version]
+  python3 build_upload.py --test --version [jsenv-version]
 ```
 
 * Build and upload jsenv.
 ```
-  python3 build/build_upload.py --upload --test \
+  python3 build_upload.py --upload --test \
     --version [jsenv-version] --repo-username admin --repo-password [password]
 ```
