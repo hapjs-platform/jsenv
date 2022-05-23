@@ -4,21 +4,20 @@ stages:
   - build
   - release
 
-before_script:
-  - curl -o /tmp/git-lfs.deb -s http://archive.ubuntu.com/ubuntu/pool/universe/g/git-lfs/git-lfs_2.9.2-1_amd64.deb
-  - dpkg -i /tmp/git-lfs.deb
-
 build:
   stage: build
   except:
     - tags
   script:
+# build v8
     - cd /root/v8
     - git checkout remotes/origin/8.3-lkgr
+    - cp -R /root/v8/include $CI_PROJECT_DIR/v8-build/v8
+    - cd $CI_PROJECT_DIR/v8-build/v8/src
+    - echo "1. build v8 project."
+    - python build_v8.py --target android --v8-source /root/v8 --remote-branch remotes/origin/8.3-lkgr
+# build jsenv
     - cd $CI_PROJECT_DIR
-    - git lfs install
-    - git lfs pull
-    - tar -xf v8-build-0.0.5.tgz
     - mkdir -p third_party/android_tools/
     - ln -s /root/v8/third_party/android_ndk third_party/android_tools/ndk
     - ln -s /root/v8/third_party/android_sdk/public third_party/android_tools/sdk
@@ -40,9 +39,6 @@ release:
     - cd /root/v8
     - git checkout remotes/origin/8.3-lkgr
     - cd $CI_PROJECT_DIR
-    - git lfs install
-    - git lfs pull
-    - tar -xf v8-build-0.0.5.tgz
     - mkdir -p third_party/android_tools/
     - ln -s /root/v8/third_party/android_ndk third_party/android_tools/ndk
     - ln -s /root/v8/third_party/android_sdk/public third_party/android_tools/sdk
