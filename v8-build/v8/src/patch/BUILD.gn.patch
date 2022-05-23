@@ -1,0 +1,39 @@
+diff --git a/BUILD.gn b/BUILD.gn
+index b2dde3f9d7..5caf9770c8 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -314,6 +314,8 @@ config("internal_config") {
+   if (is_component_build) {
+     defines += [ "BUILDING_V8_SHARED" ]
+   }
++  #Export v8 symbols by Macro V8_EXPORT.
++  defines += [ "BUILDING_V8_SHARED" ]
+ }
+ 
+ # Should be applied to all targets that write trace events.
+@@ -3867,6 +3869,8 @@ v8_component("v8_libplatform") {
+   if (is_component_build) {
+     defines = [ "BUILDING_V8_PLATFORM_SHARED" ]
+   }
++  #Export v8 platform symbols by Macro V8_EXPORT.
++  defines = [ "BUILDING_V8_PLATFORM_SHARED" ]
+ 
+   public_configs = [ ":libplatform_config" ]
+ 
+@@ -4869,3 +4873,16 @@ if (!build_with_chromium && v8_use_perfetto) {
+     }
+   }  # host_toolchain
+ }  # if (!build_with_chromium && v8_use_perfetto)
++static_library("v8_static") {
++  sources = [
++    "wrapper/wrapper-inspector.cc",
++    "wrapper/wrapper-console.cc"
++  ]
++  complete_static_lib = true
++
++  deps = [
++    ":v8",
++    ":v8_libbase",
++    ":v8_libplatform",
++  ]
++}
