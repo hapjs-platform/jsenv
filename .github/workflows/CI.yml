@@ -3,21 +3,30 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      matrix:
-#        node-version: [13.x]
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+  build:
+    container:
+      image: quickapp/v8-build:200513
 
+    name: build
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-#    - name: Use Node.js ${{ matrix.node-version }}
-#      uses: actions/setup-node@v1
-#      with:
-#        node-version: ${{ matrix.node-version }}
-    - name: Environment Information
-      run: npx envinfo
-    - run: yarn
-    - name: Run Test
-      run: yarn test
+      - uses: actions/checkout@v3
+      - name: "build v8"
+        run: |
+          export CI_PROJECT_DIR=`pwd`
+          cd /root/v8
+          git checkout remotes/origin/8.3-lkgr
+          cp -R /root/v8/include $CI_PROJECT_DIR/v8-build/v8
+          cd $CI_PROJECT_DIR/v8-build/v8/src
+          echo "1. build v8 project."
+          python build_v8.py --target android --v8-source /root/v8 --remote-branch remotes/origin/8.3-lkgr
+      - name: "build jsenv"
+        run: |
+          cd $CI_PROJECT_DIR
+          mkdir -p third_party/android_tools/
+          ln -s /root/v8/third_party/android_ndk third_party/android_tools/ndk
+          ln -s /root/v8/third_party/android_sdk/public third_party/android_tools/sdk
+          ln -s /root/v8/third_party/depot_tools third_party/depot_tools
+          echo "1. Build jsenv.aar."
+          python3 build_upload.py --version $CI_COMMIT_TAG --release
+
