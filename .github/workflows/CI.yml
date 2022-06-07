@@ -6,12 +6,12 @@ jobs:
   build:
     container:
       image: quickapp/v8-build:200513
-
     name: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: "build v8"
+        timeout-minutes: 720
         run: |
           export CI_PROJECT_DIR=`pwd`
           cd /root/v8
@@ -22,7 +22,6 @@ jobs:
           python build_v8.py --target android --v8-source /root/v8 --remote-branch remotes/origin/8.3-lkgr
       - name: "build jsenv"
         run: |
-          cd $CI_PROJECT_DIR
           mkdir -p third_party/android_tools/
           ln -s /root/v8/third_party/android_ndk third_party/android_tools/ndk
           ln -s /root/v8/third_party/android_sdk/public third_party/android_tools/sdk

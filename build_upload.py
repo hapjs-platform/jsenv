@@ -70,12 +70,8 @@ def build_aar(target_os, target_cpu, is_debug, use_no_v8symbols, version, upload
   os.system(" && ".join(cmds))
 
 def build_all_aars(is_debug, version, upload):
-  build_aar("android", "x86", is_debug, False, version, False)
-  build_aar("android", "x64", is_debug, False, version, False)
   build_aar("android", "arm", is_debug, False, version, False)
   build_aar("android", "arm64", is_debug, False, version, upload)
-  build_aar("android", "x86", is_debug, True, version, False)
-  build_aar("android", "x64", is_debug, True, version, False)
   build_aar("android", "arm", is_debug, True, version, False)
   build_aar("android", "arm64", is_debug, True, version, upload)
 

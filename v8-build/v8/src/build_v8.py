@@ -33,12 +33,6 @@ gn_args = [
       },
       {
         'target_cpu': 'arm'
-      },
-      {
-        'target_cpu': 'x64'
-      },
-      {
-        'target_cpu': 'x86'
       }
     ]
   },
