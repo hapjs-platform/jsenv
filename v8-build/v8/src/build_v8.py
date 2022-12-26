@@ -164,7 +164,13 @@ def patch_source(patch_dir, source_dir):
   source_path = os.path.join(source_dir, "src/inspector/v8-debugger-agent-impl.cc")
   print("patch patch_path %s > source_path %s" % (patch_path, source_path))
   os.system("patch -p0 %s < %s" % (source_path, patch_path))
-  # 3.copy wrapper to v8
+
+  # 3. git am 0001.patch for jit bug. https://bugs.chromium.org/p/chromium/issues/detail?id=1126249
+  jit_patch = os.path.join(patch_dir, "patch/0001-Merged-compiler-Fix-bug-in-SimplifiedLowering-s-over.patch")
+  print("git am %s" % jit_patch)
+  os.system("git am %s" % jit_patch)
+
+  # 1.copy wrapper to v8
   print("copy wrapper %s->%s" %(patch_dir, source_dir))
   dest = os.path.join(source_dir, "wrapper")
   if os.path.exists(dest):
