@@ -1,13 +1,16 @@
---- v8-debugger-agent-impl.cc	2020-02-26 21:11:10.000000000 +0800
-+++ v8-debugger-agent-impl.cc.bak	2020-04-14 14:42:38.266793957 +0800
-@@ -514,7 +514,21 @@ Response V8DebuggerAgentImpl::setBreakpo
+diff --git a/src/inspector/v8-debugger-agent-impl.cc b/src/inspector/v8-debugger-agent-impl.cc
+index 2e5c8cd417..74fb54be82 100644
+--- a/src/inspector/v8-debugger-agent-impl.cc
++++ b/src/inspector/v8-debugger-agent-impl.cc
+@@ -518,8 +518,22 @@ Response V8DebuggerAgentImpl::setBreakpointByUrl(
        UNREACHABLE();
    }
    if (breakpoints->get(breakpointId)) {
--    return Response::Error("Breakpoint at specified location already exists.");
+-    return Response::ServerError(
+-        "Breakpoint at specified location already exists.");
++    // return Response::ServerError(
++    //    "Breakpoint at specified location already exists.");
 +    // HYBRID ADD BEGIN
-+    // hotfix: 当点击谷歌浏览器的刷新按钮时，会重新设置所有的断点。如果此时返回
-+    // 错误,会导致浏览器清除自身断点。因此收到重复断点时，直接返回正确。
 +    *outBreakpointId = breakpointId;
 +    for (const auto& script : m_scripts) {
 +      if (!matches(m_inspector, *script.second, type, selector)) continue;
@@ -17,8 +20,9 @@
 +        (*locations)->emplace_back(std::move(location));
 +      }
 +    }
-+    //return Response::Error("Breakpoint at specified location already exists.");
-+    return Response::OK();
++    // return Response::ServerError(
++    //     "Breakpoint at specified location already exists.");
++    return Response::Success();
 +    //HYBRID END
    }
  
