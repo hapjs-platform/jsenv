@@ -44,7 +44,7 @@ public class FunctionMirror extends ObjectMirror {
         try {
             return script.executeStringFunction(NAME, null);
         } finally {
-            script.release();
+            script.close();
         }
     }
 

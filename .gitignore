@@ -1,5 +1,5 @@
 third_party
-.gradle/
+gradle/
 .idea/
 .DS_Store
 *.log
