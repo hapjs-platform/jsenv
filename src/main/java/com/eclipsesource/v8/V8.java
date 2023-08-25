@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.eclipsesource.v8.inspector.V8InspectorDelegate;
 import com.eclipsesource.v8.utils.V8Executor;
 import com.eclipsesource.v8.utils.V8Map;
 import com.eclipsesource.v8.utils.V8Runnable;
@@ -47,6 +48,7 @@ public class V8 extends V8Object {
 
     private Map<String, Object>          data                    = null;
     private final V8Locker               locker;
+    private SignatureProvider            signatureProvider       = null;
     private long                         objectReferences        = 0;
     private long                         v8RuntimePtr            = 0;
     private List<Releasable>             resources               = null;
@@ -173,6 +175,10 @@ public class V8 extends V8Object {
         return runtime;
     }
 
+    public void setSignatureProvider(final SignatureProvider signatureProvider) {
+        this.signatureProvider = signatureProvider;
+    }
+
     /**
      * Adds a ReferenceHandler to track when new V8Objects are created.
      *
@@ -260,12 +266,16 @@ public class V8 extends V8Object {
 
     private static void checkNativeLibraryLoaded() {
         if (!nativeLibraryLoaded) {
+            String vendorName = LibraryLoader.computeLibraryShortName(true);
+            String baseName = LibraryLoader.computeLibraryShortName(false);
+            String message = "J2V8 native library not loaded (" + baseName + "/" + vendorName + ")";
+
             if (nativeLoadError != null) {
-                throw new IllegalStateException("J2V8 native library not loaded", nativeLoadError);
+                throw new IllegalStateException(message, nativeLoadError);
             } else if (nativeLoadException != null) {
-                throw new IllegalStateException("J2V8 native library not loaded", nativeLoadException);
+                throw new IllegalStateException(message, nativeLoadException);
             } else {
-                throw new IllegalStateException("J2V8 native library not loaded");
+                throw new IllegalStateException(message);
             }
         }
     }
@@ -292,6 +302,20 @@ public class V8 extends V8Object {
        this(globalAlias, null);
     }
     // HYBRID END
+
+    public long createInspector(final V8InspectorDelegate inspectorDelegate, final String contextName) {
+        return _createInspector(v8RuntimePtr, inspectorDelegate, contextName);
+    }
+
+    public void dispatchProtocolMessage(final long V8InspectorPtr, final String protocolMessage) {
+        checkThread();
+        _dispatchProtocolMessage(v8RuntimePtr, V8InspectorPtr, protocolMessage);
+    }
+
+    public void schedulePauseOnNextStatement(final long V8InspectorPtr, final String reason) {
+        checkThread();
+        _schedulePauseOnNextStatement(v8RuntimePtr, V8InspectorPtr, reason);
+    }
 
     /**
      * Returns an UNDEFINED constant.
@@ -346,9 +370,19 @@ public class V8 extends V8Object {
 
     /*
      * (non-Javadoc)
+     * @see com.eclipsesource.v8.V8Value#close()
+     */
+    @Override
+    public void close() {
+        release(true);
+    }
+
+    /*
+     * (non-Javadoc)
      * @see com.eclipsesource.v8.V8Value#release()
      */
     @Override
+    @Deprecated
     public void release() {
         release(true);
     }
@@ -392,7 +426,7 @@ public class V8 extends V8Object {
             v8RuntimePtr = 0L;
             released = true;
             if (reportMemoryLeaks && (getObjectReferenceCount() > 0)) {
-                throw new IllegalStateException(objectReferences + " Object(s) still exist in runtime");
+                throw new IllegalStateException(getObjectReferenceCount() + " Object(s) still exist in runtime");
             }
         }
     }
@@ -677,16 +711,51 @@ public class V8 extends V8Object {
      * Primitives will be boxed.
      *
      * @param script The script to execute.
-     * @param scriptName The name of the script
+     * @param uri The name of the script
+     *
+     * @return The result of the script as a Java Object.
+     */
+    public Object executeScript(final String script, final String uri) {
+        checkThread();
+        checkScript(script);
+        return executeScript(getV8RuntimePtr(), UNKNOWN, script, uri, 0);
+    }
+
+    /**
+     * Executes a JS Script on this runtime and returns the result as a Java Object.
+     * Primitives will be boxed.
+     *
+     * @param script The script to execute.
+     * @param uri The name of the script
      * @param lineNumber The line number that is considered to be the first line of
      * the script. Typically 0, but could be set to another value for exception stack trace purposes.
      *
      * @return The result of the script as a Java Object.
      */
-    public Object executeScript(final String script, final String scriptName, final int lineNumber) {
+    public Object executeScript(final String script, final String uri, final int lineNumber) {
         checkThread();
         checkScript(script);
-        return executeScript(getV8RuntimePtr(), UNKNOWN, script, scriptName, lineNumber);
+        return executeScript(getV8RuntimePtr(), UNKNOWN, script, uri, lineNumber);
+    }
+
+    /**
+     * Executes a JS Script module on this runtime and returns the result as a Java Object.
+     * Primitives will be boxed.
+     *
+     * If the script does not match the signature (as verified with the public key) then a
+     * V8SecurityException will be thrown.
+     *
+     * @param script The signed script to execute
+     * @param modulePrefix The module prefix
+     * @param modulePostfix The module postfix
+     * @param uri The name of the script
+     *
+     * @return The result of the script as a Java Object.
+     */
+    public Object executeModule(final String script, final String modulePrefix, final String modulePostfix, final String uri) {
+        checkThread();
+        checkScript(script);
+        return executeScript(getV8RuntimePtr(), UNKNOWN, modulePrefix + script + modulePostfix, uri, 0);
     }
 
     /**
@@ -762,7 +831,7 @@ public class V8 extends V8Object {
      *
      * @return The unique build ID of the Native library.
      */
-    public long getBuildID() {
+    public static long getBuildID() {
         return _getBuildID();
     }
 
@@ -854,7 +923,7 @@ public class V8 extends V8Object {
         if (v8Value != null) {
             v8WeakReferences.remove(objectID);
             try {
-                v8Value.release();
+                v8Value.close();
             } catch (Exception e) {
                 // Swallow these exceptions. The V8 GC is running, and
                 // if we return to V8 with Java exception on our stack,
@@ -940,13 +1009,13 @@ public class V8 extends V8Object {
             Object[] varArgs = (Object[]) args[args.length - 1];
             for (Object object : varArgs) {
                 if (object instanceof V8Value) {
-                    ((V8Value) object).release();
+                    ((V8Value) object).close();
                 }
             }
         }
         for (Object arg : args) {
             if (arg instanceof V8Value) {
-                ((V8Value) arg).release();
+                ((V8Value) arg).close();
             }
         }
     }
@@ -1046,6 +1115,10 @@ public class V8 extends V8Object {
         return _initNewV8Object(v8RuntimePtr);
     }
 
+    protected long initEmptyContainer(final long v8RuntimePtr) {
+        return _initEmptyContainer(v8RuntimePtr);
+    }
+
     protected void acquireLock(final long v8RuntimePtr) {
         _acquireLock(v8RuntimePtr);
     }
@@ -1088,6 +1161,10 @@ public class V8 extends V8Object {
 
     protected void setWeak(final long v8RuntimePtr, final long objectHandle) {
         _setWeak(v8RuntimePtr, objectHandle);
+    }
+
+    protected void clearWeak(final long v8RuntimePtr, final long objectHandle) {
+        _clearWeak(v8RuntimePtr, objectHandle);
     }
 
     protected boolean isWeak(final long v8RuntimePtr, final long objectHandle) {
@@ -1320,6 +1397,10 @@ public class V8 extends V8Object {
         _addArrayNullItem(v8RuntimePtr, arrayHandle);
     }
 
+    protected String getConstructorName(final long v8RuntimePtr, final long objectHandle) {
+        return _getConstructorName(v8RuntimePtr, objectHandle);
+    }
+
     protected int getType(final long v8RuntimePtr, final long objectHandle) {
         return _getType(v8RuntimePtr, objectHandle);
     }
@@ -1394,6 +1475,8 @@ public class V8 extends V8Object {
 
     private native long _initNewV8Object(long v8RuntimePtr);
 
+    private native long _initEmptyContainer(long v8RuntimePtr);
+
     private native void _acquireLock(long v8RuntimePtr);
 
     private native void _releaseLock(long v8RuntimePtr);
@@ -1407,6 +1490,12 @@ public class V8 extends V8Object {
     // HYBRID MODIFY:
     //private native long _createIsolate(String globalAlias);
     private native long _createIsolate(String globalAlias, String nativejsSnapshotSoName);
+
+    private native long _createInspector(long v8RuntimePtr, final V8InspectorDelegate inspectorDelegate, final String contextName);
+
+    private native void _dispatchProtocolMessage(final long v8RuntimePtr, long v8InspectorPtr, final String protocolMessage);
+
+    private native void _schedulePauseOnNextStatement(final long v8RuntimePtr, long v8InspectorPtr, final String reason);
 
     private native int _executeIntegerScript(long v8RuntimePtr, final String script, final String scriptName, final int lineNumber);
 
@@ -1518,6 +1607,8 @@ public class V8 extends V8Object {
 
     private native void _setPrototype(long v8RuntimePtr, long objectHandle, long prototypeHandle);
 
+    private native String _getConstructorName(long v8RuntimePtr, long objectHandle);
+
     private native int _getType(long v8RuntimePtr, long objectHandle);
 
     private native int _getType(long v8RuntimePtr, long objectHandle, final int index, final int length);
@@ -1566,6 +1657,8 @@ public class V8 extends V8Object {
 
     private native void _setWeak(long runtimePtr, long objectHandle);
 
+    private native void _clearWeak(long runtimePtr, long objectHandle);
+
     private native boolean _isWeak(long runtimePtr, long objectHandle);
 
     private native ByteBuffer _createV8ArrayBufferBackingStore(final long v8RuntimePtr, final long objectHandle, final int capacity);
@@ -1578,13 +1671,26 @@ public class V8 extends V8Object {
 
     private native long _getGlobalObject(final long v8RuntimePtr);
 
-    private native long _getBuildID();
+    private native static long _getBuildID();
 
     private native static void _startNodeJS(final long v8RuntimePtr, final String fileName);
 
     private native static boolean _pumpMessageLoop(final long v8RuntimePtr);
 
     private native static boolean _isRunning(final long v8RuntimePtr);
+
+    private native static boolean _isNodeCompatible();
+
+    public static boolean isNodeCompatible() {
+        if (!nativeLibraryLoaded) {
+            synchronized (lock) {
+                if (!nativeLibraryLoaded) {
+                    load(null);
+                }
+            }
+        }
+        return _isNodeCompatible();
+    }
 
     void addObjRef(final V8Value reference) {
         objectReferences++;

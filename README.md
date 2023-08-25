@@ -13,10 +13,10 @@ Public GN documents can be found at: [https://chromium.googlesource.com/chromium
 ```
 export CI_PROJECT_DIR="/root/jsenv-runtime"
 cd /root/v8
-git checkout remotes/origin/8.3-lkgr
+git checkout 9.3.345.11
 cp -R /root/v8/include $CI_PROJECT_DIR/v8-build/v8
 cd $CI_PROJECT_DIR/v8-build/v8/src
-python build_v8.py --target android --v8-source /root/v8 --remote-branch remotes/origin/8.3-lkgr
+python build_v8.py --target android --v8-source /root/v8 --remote-branch 9.3.345.11
 ```
 ## 3. Link third_party.
 ```

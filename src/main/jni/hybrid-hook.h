@@ -55,7 +55,7 @@ void ThrowExecutionException(J2V8Runtime* runtime, v8::TryCatch* trycatch) {
   }
   getJNIEnv(env);
   v8::Local<v8::Context> context = J2V8RuntimeGetContext(runtime);
-  throwExecutionException(context, env, v8rt->isolate, trycatch,
+  throwExecutionException(env, context, v8rt->isolate, trycatch,
                           reinterpret_cast<jlong>(runtime));
 }
 

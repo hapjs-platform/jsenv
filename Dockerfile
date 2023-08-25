@@ -1,4 +1,4 @@
-FROM ubuntu:19.10
+FROM ubuntu:20.04
 
 ENV PATH=${PATH}:/root/depot_tools:/root/v8/tools/dev
 
@@ -26,10 +26,18 @@ RUN apt-get install -y npm && \
 
 RUN cd ~ && git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git --depth=1
 
-RUN cd ~ && fetch v8 && cd ~/v8 && gclient sync
-RUN apt install gcc-9-arm-linux-gnueabihf -y
+# Solve the problem of not being able to download android_ndk
+RUN cd ~ && fetch v8 \ 
+        && cd v8 && git checkout 9.3.345.11 \
+        && sed -i 's/2c2138e811487b13020eb331482fb991fd399d4e/083aa67a0d3309ebe37eafbe7bfd96c235a019cf/g' DEPS \
+        && echo "target_os = ['android']" >> ../.gclient \
+        && gclient sync
 
-RUN cd ~/v8 && sed -i 's/${dev_list} snapcraft/${dev_list}/g' build/install-build-deps.sh && build/install-build-deps.sh --lib32
+RUN apt install gcc-arm-linux-gnueabihf -y
+RUN apt autoremove -y
+
+RUN cd ~/v8 && sed -i 's/${dev_list} snapcraft/${dev_list}/g' build/install-build-deps.sh \
+        && build/install-build-deps.sh --lib32
 
 CMD [ "fish" ]
 
@@ -38,14 +46,10 @@ ENV ANDROID_NDK_HOME=/root/v8/third_party/android_ndk
 
 RUN apt install openjdk-8-jdk -y && update-java-alternatives -s java-1.8.0-openjdk-amd64
 
-RUN cd ~/v8 && build/install-build-deps-android.sh
-RUN cd ~/v8/build && git reset HEAD --hard
-
-RUN cd ~/v8 && echo "target_os = ['android']" >> ../.gclient \
-        && gclient sync
-
+RUN cd ~/v8 && build/install-build-deps-android.sh --lib32
 
 RUN apt update && apt install libatomic1:i386 -y
+RUN apt install ninja-build
 
 ENV PATH=${PATH}:${ANDROID_HOME}/cmdline-tools/latest/bin
 ARG ANDROID_BUILD_VERSION=28

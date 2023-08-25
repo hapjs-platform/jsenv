@@ -7,17 +7,17 @@ if (is_android) {
     android_ndk_root = rebase_path("//third_party/android_tools/ndk")
 
     # Android API level for 32 bits platforms
-    android32_ndk_api_level = 16
+    android32_ndk_api_level = 28 # 26-30
 
     # Android API level for 64 bits platforms
-    android64_ndk_api_level = 21
+    android64_ndk_api_level = 30
 
     # TODO(liushouqun): Fix this by reading the 'source.properties' file to get version.
-    android_ndk_major_version = 20
+    android_ndk_major_version = 22
 
     android_sdk_root = rebase_path("//third_party/android_tools/sdk")
     android_sdk_version = "28"
-    android_sdk_build_tools_version = "27.0.3"
+    android_sdk_build_tools_version = "28.0.3"
 
     android_toolchain_root = ""
     android_toolchain_prefix = ""

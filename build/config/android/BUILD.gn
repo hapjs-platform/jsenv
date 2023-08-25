@@ -37,81 +37,101 @@ config("compiler") {
   ldflags = [
   ]
 
-  android_compile_sysroot = "$android_ndk_root/sysroot"
-  android_linker_sysroot = android_compile_sysroot
+  # android_compile_sysroot = "$android_ndk_root/toolchains/llvm/prebuilt/$android_toolchain_host_path/sysroot"
+  # android_linker_sysroot = android_compile_sysroot
   if (target_cpu == "arm") {
     abi_target = "arm-linux-androideabi"
-    arm_android_sysroot_subdir = "platforms/android-${android32_ndk_api_level}/arch-arm"
-    android_linker_sysroot = "$android_ndk_root/$arm_android_sysroot_subdir"
+    # arm_android_sysroot_subdir = "platforms/android-${android32_ndk_api_level}/arch-arm"
+    # android_linker_sysroot = "$android_ndk_root/$arm_android_sysroot_subdir"
   } else if (target_cpu == "arm64") {
     abi_target = "aarch64-linux-android"
-    arm64_android_sysroot_subdir = "platforms/android-${android64_ndk_api_level}/arch-arm64"
-    android_linker_sysroot = "$android_ndk_root/$arm64_android_sysroot_subdir"
+    # arm64_android_sysroot_subdir = "platforms/android-${android64_ndk_api_level}/arch-arm64"
+    # android_linker_sysroot = "$android_ndk_root/$arm64_android_sysroot_subdir"
   } else if (target_cpu == "x86") {
     abi_target = "i686-linux-android"
-    x86_android_sysroot_subdir = "platforms/android-${android32_ndk_api_level}/arch-x86"
-    android_linker_sysroot = "$android_ndk_root/$x86_android_sysroot_subdir"
+    # x86_android_sysroot_subdir = "platforms/android-${android32_ndk_api_level}/arch-x86"
+    # android_linker_sysroot = "$android_ndk_root/$x86_android_sysroot_subdir"
   } else if (target_cpu == "x64") {
     abi_target = "x86_64-linux-android"
-    x86_64_android_sysroot_subdir = "platforms/android-${android64_ndk_api_level}/arch-x86_64"
-    android_linker_sysroot = "$android_ndk_root/$x86_64_android_sysroot_subdir"
+    # x86_64_android_sysroot_subdir = "platforms/android-${android64_ndk_api_level}/arch-x86_64"
+    # android_linker_sysroot = "$android_ndk_root/$x86_64_android_sysroot_subdir"
   } else {
     assert(false, "Target ABI not supported.")
   }
 
   if (is_clang) {
     cflags += [
-      "--target=$abi_target",
+      "--target=$abi_target$compile_api_level",
     ]
     ldflags += [
-      "--target=$abi_target",
+      "--target=$abi_target$compile_api_level",
     ]
   }
 
   cflags += [
-    "-isystem" +
-        rebase_path("$android_ndk_root/sysroot/usr/include/$abi_target", root_build_dir),
-    "--sysroot=" + rebase_path(android_compile_sysroot, root_build_dir),
+  #   "-isystem" +
+  #       rebase_path("$android_compile_sysroot/usr/include/$abi_target/asm", root_build_dir),
+  #   "-isystem" + "$android_ndk_root/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/11.0.5/include",
+  #   "-isystem" + "$android_compile_sysroot/usr/include",
+  #   "-isystem" + "$android_ndk_root/toolchains/renderscript/prebuilt/linux-x86_64/clang-include",
+    # "--sysroot=" + rebase_path(android_compile_sysroot, root_build_dir),
+    # "-fno-use-cxa-atexit",
+    # "-stdlib=libc++"
   ]
 
   ldflags += [
-    "--sysroot=" + rebase_path(android_linker_sysroot, root_build_dir),
+    # "--sysroot=" + rebase_path(android_linker_sysroot, root_build_dir),
+    # "-L" + "$android_compile_sysroot/usr/lib/$abi_target/$compile_api_level/",
+    # "-llog",
+    # "-landroid",
+    # "-lc",
+    # "-lm",
+    # "-ldl",
+    # "-lc++abi",
+    # "-lc++_shared",
+    # "-l$android_libgcc_file",
+    # "$android_compile_sysroot/usr/lib/$abi_target/$compile_api_level/crtbegin_so.o",
+    # "-L$android_linker_sysroot/usr/lib/$abi_target/",
   ]
 
-  if (android_ndk_major_version >= 13) {
-    libcxx_include_path =
-        rebase_path("$android_libcpp_root/include", root_build_dir)
-    libcxxabi_include_path =
-        rebase_path("$android_ndk_root/sources/cxx-stl/llvm-libc++abi/include",
-                    root_build_dir)
-  } else {
-    libcxx_include_path =
-        rebase_path("$android_libcpp_root/libcxx/include", root_build_dir)
-    libcxxabi_include_path = rebase_path(
-        "$android_ndk_root/sources/cxx-stl/llvm-libc++abi/libcxxabi/include",
-        root_build_dir)
-  }
+  # if (android_ndk_major_version >= 13) {
+  #   libcxx_include_path =
+  #       rebase_path("$android_libcpp_root/include", root_build_dir)
+  #   libcxxabi_include_path =
+  #       rebase_path("$android_ndk_root/sources/cxx-stl/llvm-libc++abi/include",
+  #                   root_build_dir)
+  # } else {
+  #   libcxx_include_path =
+  #       rebase_path("$android_libcpp_root/libcxx/include", root_build_dir)
+  #   libcxxabi_include_path = rebase_path(
+  #       "$android_ndk_root/sources/cxx-stl/llvm-libc++abi/libcxxabi/include",
+  #       root_build_dir)
+  # }
 
-  android_support_include_path = rebase_path(
-      "$android_ndk_root/sources/android/support/include",
-      root_build_dir)
+  # android_support_include_path = rebase_path(
+  #     "$android_ndk_root/sources/android/support/include",
+  #     root_build_dir)
 
   cflags_cc += [
-    "-isystem" + libcxx_include_path,
-    "-isystem" + libcxxabi_include_path,
-    "-isystem" + android_support_include_path,
+  #   "-isystem" + libcxx_include_path,
+  #   "-isystem" + libcxxabi_include_path,
+  #   "-isystem" + android_support_include_path,
+  #   "-isystem" + "$android_ndk_root/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/11.0.5/include",
+  #   "-isystem" + "$android_compile_sysroot/usr/include",
+  #   "-isystem" + "$android_ndk_root/toolchains/renderscript/prebuilt/linux-x86_64/clang-include",
+  # "-fno-use-cxa-atexit",
   ]
 
   # Android Linker settings
   ldflags += [
     "-nostdlib++",
-    "-L${android_libcpp_lib_dir}",
+    # "-L${android_libcpp_lib_dir}",
     "-Wl,--exclude-libs,ALL",
     "-Wl,--warn-shared-textrel",
   ]
 
   if (is_clang) {
-    ldflags += [ "--gcc-toolchain=" + rebase_path(android_toolchain_root, root_build_dir) ]
+    # ldflags += [ "--gcc-toolchain=" + rebase_path(android_toolchain_root, root_build_dir) ]
   }
 
   # Use shared C++

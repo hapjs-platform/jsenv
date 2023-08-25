@@ -85,7 +85,7 @@ void ConsolePrint(const android_LogPriority level,
     v8::Local<v8::String> str_obj;
 
     if (arg->IsSymbol())
-      arg = v8::Local<v8::Symbol>::Cast(arg)->Name();
+      arg = v8::Local<v8::Symbol>::Cast(arg)->Description(isolate);
     if (!arg->ToString(isolate->GetCurrentContext()).ToLocal(&str_obj))
       return;
 

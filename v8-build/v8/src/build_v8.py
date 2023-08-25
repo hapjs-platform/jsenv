@@ -60,7 +60,7 @@ def parse_args(argv):
   parser = optparse.OptionParser()
   parser.add_option("-s", "--v8-source", dest="v8_source", type="string", help="url of v8 source")
   parser.add_option("-t", "--target", dest="target", action="append", choices=["android", "linux", "windows", "mac"])
-  parser.add_option("-b", "--remote-branch", dest="remote_branch", action="store", default="remotes/origin/8.3", help="set remote-branch")
+  parser.add_option("-b", "--remote-branch", dest="remote_branch", action="store", default="9.3.345.11", help="set remote-branch")
 
   options, args = parser.parse_args(argv)
   return options
