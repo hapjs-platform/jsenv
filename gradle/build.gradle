@@ -11,6 +11,9 @@ buildscript {
     google()
     jcenter()
   }
+  // ext {
+  //   ndkVersion = "20.1.5948944"
+  // }
   dependencies {
     classpath 'com.android.tools.build:gradle:3.5.3'
 
@@ -47,8 +50,8 @@ if (project.hasProperty('jsenvVersionCode')) {
 
 android {
 
-    compileSdkVersion 28
-    buildToolsVersion "28.0.3"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.2"
 
     defaultConfig {
       minSdkVersion 19

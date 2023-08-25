@@ -15,7 +15,7 @@
 #include "inspector-js-api.h"
 #include "inspector-proxy.h"
 #include "jsvalue_impl.h"
-#include "logcat-console.h"
+// #include "logcat-console.h"
 
 using v8::Array;
 using v8::ArrayBuffer;
@@ -134,8 +134,8 @@ JSEnvImpl::JSEnvImpl(J2V8Runtime* runtime)
 
   isolate_->SetData(kJSEnvIsolateSoltIndex, this);
 
-  logcat_console_.reset(LogcatConsole::Create(isolate_));
-  logcat_console_->Attach(isolate_);
+  // logcat_console_.reset(LogcatConsole::Create(isolate_));
+  // logcat_console_->Attach(isolate_);
   // set PromiseRejection
   // isolate_->SetPromiseRejectCallback(handle);
 }
@@ -171,12 +171,12 @@ void JSEnvImpl::ClearException() {
 }
 
 void JSEnvImpl::Detach() {
-  if (logcat_console_ && isolate_) {
-    HandleScope handle_scope(isolate_);
-    if (logcat_console_) {
-      logcat_console_->Detach(isolate_);
-    }
-  }
+  // if (logcat_console_ && isolate_) {
+  //   HandleScope handle_scope(isolate_);
+  //   if (logcat_console_) {
+  //     logcat_console_->Detach(isolate_);
+  //   }
+  // }
 
   if (isolate_) {
     isolate_->SetData(kJSEnvIsolateSoltIndex, nullptr);
@@ -196,9 +196,9 @@ void JSEnvImpl::Release() {
 }
 
 void JSEnvImpl::ResetLogcat() {
-  if (logcat_console_) {
-    logcat_console_->Attach(isolate_);
-  }
+  // if (logcat_console_) {
+  //   logcat_console_->Attach(isolate_);
+  // }
 }
 
 JSInspectorSession* JSEnvImpl::CreateInspectorSession(
@@ -252,7 +252,7 @@ bool JSEnvImpl::ExecuteScript(const JSValue* code_value,
 
   Local<String> v8_code = Local<String>::Cast(v8_code_value);
 
-  Local<String> v8_script_name;
+  Local<Value> v8_script_name;
   if (file_name) {
     if (!String::NewFromUtf8(isolate_, file_name, v8::NewStringType::kNormal)
              .ToLocal(&v8_script_name)) {
@@ -264,7 +264,7 @@ bool JSEnvImpl::ExecuteScript(const JSValue* code_value,
     v8_script_name = String::NewFromUtf8(isolate_, "").ToLocalChecked();
   }
 
-  ScriptOrigin origin(v8_script_name, Integer::New(isolate_, start_lineno));
+  ScriptOrigin origin(v8_script_name, start_lineno);
 
   Local<Script> script;
 
@@ -1362,9 +1362,8 @@ void* JSEnvImpl::GetTypedArrayPointer(JSObject typed_array,
 
   size_t byte_offset = v8_typed_array->ByteOffset();
 
-  ArrayBuffer::Contents contents = v8_array_buffer->GetContents();
-
-  uint8_t* pdata = reinterpret_cast<uint8_t*>(contents.Data());
+  auto backing_store = v8_array_buffer->GetBackingStore();
+  uint8_t* pdata = reinterpret_cast<uint8_t*>(backing_store->Data());
 
   if (pdata == nullptr) {
     return nullptr;
@@ -1413,7 +1412,7 @@ JSObject JSEnvImpl::NewArrayBufferExternal(
 
   EscapableHandleScope escape_handle_scope(isolate_);
 
-  Local<ArrayBuffer> array_buffer = ArrayBuffer::New(isolate_, byte, length);
+  Local<ArrayBuffer> array_buffer = ArrayBuffer::New(isolate_, length);
 
   if (array_buffer.IsEmpty()) {
     return nullptr;
@@ -1462,9 +1461,7 @@ void* JSEnvImpl::GetArrayBufferPointer(JSObject object,
     *plength = array_buffer->ByteLength();
   }
 
-  ArrayBuffer::Contents contents = array_buffer->GetContents();
-
-  return contents.Data();
+  return array_buffer->GetBackingStore()->Data();
 }
 
 // promise

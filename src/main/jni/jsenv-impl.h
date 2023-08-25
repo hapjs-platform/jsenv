@@ -21,7 +21,7 @@
 #include "jsenv-impl-v1000.h"
 
 namespace hybrid {
-class LogcatConsole;
+// class LogcatConsole;
 
 struct JSEnvHandleScope;
 
@@ -285,7 +285,7 @@ class JSEnvImpl : public JSEnv {
 
   J2V8Runtime* runtime_;
   v8::Isolate* isolate_;
-  std::unique_ptr<LogcatConsole> logcat_console_;
+  // std::unique_ptr<LogcatConsole> logcat_console_;
   int ref_count_;
   std::vector<UserCallbackInfo> user_callbacks_;
   std::vector<JSFunctionCallbackInfo> jsfunction_callbacks_;

@@ -27,7 +27,7 @@ index b2dde3f9d7..5caf9770c8 100644
 +static_library("v8_static") {
 +  sources = [
 +    "wrapper/wrapper-inspector.cc",
-+    "wrapper/wrapper-console.cc"
++  #   "wrapper/wrapper-console.cc"
 +  ]
 +  complete_static_lib = true
 +

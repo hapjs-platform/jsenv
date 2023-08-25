@@ -309,7 +309,7 @@ config("default_warnings") {
   cflags += [
     # Enables.
     "-Wendif-labels",  # Weird old-style text after an #endif.
-    "-Werror",  # Warnings as errors.
+    # "-Werror",  # Warnings as errors.
 
     # Disables.
     "-Wno-missing-field-initializers",  # "struct foo f = {0};"
