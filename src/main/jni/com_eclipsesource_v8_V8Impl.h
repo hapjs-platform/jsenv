@@ -61,6 +61,14 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1initNewV8Object
 
 /*
  * Class:     com_eclipsesource_v8_V8
+ * Method:    _initEmptyContainer
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1initEmptyContainer
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     com_eclipsesource_v8_V8
  * Method:    _acquireLock
  * Signature: (J)V
  */
@@ -102,14 +110,34 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1releaseRuntime
 /*
  * Class:     com_eclipsesource_v8_V8
  * Method:    _createIsolate
- * # HYBRID MODIFY:
- * # Signature: (Ljava/lang/String;)J
- * Signature: (Ljava/lang/String;Ljava/lang/String;)J
+ * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
-  // HYBRID MODIFY:
-  //(JNIEnv *, jobject, jstring);
-  (JNIEnv *, jobject, jstring, jstring);
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_eclipsesource_v8_V8
+ * Method:    _createInspector
+ * Signature: (JLcom/eclipsesource/v8/inspector/V8InspectorDelegate;Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createInspector
+  (JNIEnv *, jobject, jlong, jobject, jstring);
+
+/*
+ * Class:     com_eclipsesource_v8_V8
+ * Method:    _dispatchProtocolMessage
+ * Signature: (JJLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1dispatchProtocolMessage
+  (JNIEnv *, jobject, jlong, jlong, jstring);
+
+/*
+ * Class:     com_eclipsesource_v8_V8
+ * Method:    _schedulePauseOnNextStatement
+ * Signature: (JJLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1schedulePauseOnNextStatement
+  (JNIEnv *, jobject, jlong, jlong, jstring);
 
 /*
  * Class:     com_eclipsesource_v8_V8
@@ -553,6 +581,14 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1setPrototype
 
 /*
  * Class:     com_eclipsesource_v8_V8
+ * Method:    _getConstructorName
+ * Signature: (JJ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_eclipsesource_v8_V8__1getConstructorName
+  (JNIEnv *, jobject, jlong, jlong);
+
+/*
+ * Class:     com_eclipsesource_v8_V8
  * Method:    _getType
  * Signature: (JJ)I
  */
@@ -745,6 +781,14 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1setWeak
 
 /*
  * Class:     com_eclipsesource_v8_V8
+ * Method:    _clearWeak
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1clearWeak
+  (JNIEnv *, jobject, jlong, jlong);
+
+/*
+ * Class:     com_eclipsesource_v8_V8
  * Method:    _isWeak
  * Signature: (JJ)Z
  */
@@ -797,7 +841,7 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1getGlobalObject
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1getBuildID
-  (JNIEnv *, jobject);
+  (JNIEnv *, jclass);
 
 /*
  * Class:     com_eclipsesource_v8_V8

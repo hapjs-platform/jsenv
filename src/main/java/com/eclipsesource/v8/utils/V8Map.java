@@ -40,14 +40,24 @@ public class V8Map<V> implements Map<V8Value, V>, Releasable {
         twinMap = new HashMap<V8Value, V8Value>();
     }
 
+    /*
+     * (non-Javadoc)
+     * @see java.io.Closeable#close()
+     */
+    @Override
+    public void close() {
+        this.clear();
+    }
+
     /**
      * Releases all the resources associated with this map. A
      * map can be used again once it's released, although
      * if it's used again it should be released again.
      */
     @Override
+    @Deprecated
     public void release() {
-        this.clear();
+        close();
     }
 
     /*
@@ -116,7 +126,7 @@ public class V8Map<V> implements Map<V8Value, V>, Releasable {
         V result = map.remove(key);
         V8Value twin = twinMap.remove(key);
         if (twin != null) {
-            twin.release();
+            twin.close();
         }
         return result;
     }
@@ -127,7 +137,7 @@ public class V8Map<V> implements Map<V8Value, V>, Releasable {
      */
     @Override
     public void putAll(final Map<? extends V8Value, ? extends V> m) {
-        for (Entry<? extends V8Value, ? extends V> entry : m.entrySet()) {
+        for (java.util.Map.Entry<? extends V8Value, ? extends V> entry : m.entrySet()) {
             this.put(entry.getKey(), entry.getValue());
         }
     }
@@ -140,7 +150,7 @@ public class V8Map<V> implements Map<V8Value, V>, Releasable {
     public void clear() {
         map.clear();
         for (V8Value V8Value : twinMap.keySet()) {
-            V8Value.release();
+            V8Value.close();
         }
         twinMap.clear();
     }
@@ -168,7 +178,7 @@ public class V8Map<V> implements Map<V8Value, V>, Releasable {
      * @see java.util.Map#entrySet()
      */
     @Override
-    public Set<Entry<V8Value, V>> entrySet() {
+    public Set<java.util.Map.Entry<V8Value, V>> entrySet() {
         return map.entrySet();
     }
 

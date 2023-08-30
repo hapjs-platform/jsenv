@@ -166,7 +166,7 @@ class V8PropertyMap<V> implements Map<String, V> {
      */
     @Override
     public Set<Entry<String, V>> entrySet() {
-        HashSet<Entry<String, V>> result = new HashSet<Entry<String, V>>(map.entrySet());
+        HashSet<Entry<String, V>> result = new HashSet<Map.Entry<String, V>>(map.entrySet());
         for (String nullKey : nulls) {
             result.add(new SimpleEntry<String, V>(nullKey, null));
         }
