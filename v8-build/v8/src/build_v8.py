@@ -60,7 +60,7 @@ def parse_args(argv):
   parser = optparse.OptionParser()
   parser.add_option("-s", "--v8-source", dest="v8_source", type="string", help="url of v8 source")
   parser.add_option("-t", "--target", dest="target", action="append", choices=["android", "linux", "windows", "mac"])
-  parser.add_option("-b", "--remote-branch", dest="remote_branch", action="store", default="remotes/origin/8.3", help="set remote-branch")
+  parser.add_option("-b", "--remote-branch", dest="remote_branch", action="store", default="remotes/origin/9.3-lkgr", help="set remote-branch")
 
   options, args = parser.parse_args(argv)
   return options
@@ -121,6 +121,9 @@ def build_cpu_aarch_release(target, cpu, is_release, cwd):
   print(gn_gen_command)
   os.system(gn_gen_command)
   print("build .............")
+  clean_cmd = "ninja -C %s -t clean" % out_dir
+  print(clean_cmd)
+  os.system(clean_cmd)
   build_cmd = "ninja -C %s v8_static" % out_dir
   print(build_cmd)
   os.system(build_cmd)
