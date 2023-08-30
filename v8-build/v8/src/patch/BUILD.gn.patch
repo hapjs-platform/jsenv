@@ -1,8 +1,8 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index b2dde3f9d7..5caf9770c8 100644
+index 17bab98e8fa..dbd06ee62dc 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -314,6 +314,8 @@ config("internal_config") {
+@@ -548,6 +548,8 @@ config("internal_config") {
    if (is_component_build) {
      defines += [ "BUILDING_V8_SHARED" ]
    }
@@ -11,7 +11,7 @@ index b2dde3f9d7..5caf9770c8 100644
  }
  
  # Should be applied to all targets that write trace events.
-@@ -3867,6 +3869,8 @@ v8_component("v8_libplatform") {
+@@ -4889,6 +4891,8 @@ v8_component("v8_libplatform") {
    if (is_component_build) {
      defines = [ "BUILDING_V8_PLATFORM_SHARED" ]
    }
@@ -20,20 +20,32 @@ index b2dde3f9d7..5caf9770c8 100644
  
    public_configs = [ ":libplatform_config" ]
  
-@@ -4869,3 +4873,16 @@ if (!build_with_chromium && v8_use_perfetto) {
-     }
-   }  # host_toolchain
+@@ -6411,3 +6415,28 @@ if (!build_with_chromium && v8_use_perfetto) {
+     ]
+   }
  }  # if (!build_with_chromium && v8_use_perfetto)
-+static_library("v8_static") {
++
++v8_component("v8_libwrapper") {
 +  sources = [
 +    "wrapper/wrapper-inspector.cc",
 +    "wrapper/wrapper-console.cc"
 +  ]
++
++  deps = [
++    ":v8",
++    ":v8_libbase",
++    ":v8_libplatform",
++  ]
++  configs = [ ":internal_config" ]
++}
++
++static_library("v8_static") {
 +  complete_static_lib = true
 +
 +  deps = [
 +    ":v8",
 +    ":v8_libbase",
 +    ":v8_libplatform",
++    ":v8_libwrapper",
 +  ]
 +}
