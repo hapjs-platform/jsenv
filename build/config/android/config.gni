@@ -13,7 +13,7 @@ if (is_android) {
     android64_ndk_api_level = 21
 
     # TODO(liushouqun): Fix this by reading the 'source.properties' file to get version.
-    android_ndk_major_version = 20
+    android_ndk_major_version = 22
 
     android_sdk_root = rebase_path("//third_party/android_tools/sdk")
     android_sdk_version = "28"
@@ -73,11 +73,13 @@ if (is_android) {
   android_toolchain_prefix = ""
   android_app_abi = ""
   if (target_cpu == "arm") {
-    android_toolchain_root = android_ndk_root + "/toolchains/arm-linux-androideabi-4.9/prebuilt"
+    android_toolchain_root =
+        android_ndk_root + "/toolchains/arm-linux-androideabi-4.9/prebuilt"
     android_toolchain_prefix = "arm-linux-androideabi"
     android_app_abi = "armeabi-v7a"
   } else if (target_cpu == "arm64") {
-    android_toolchain_root = android_ndk_root + "/toolchains/aarch64-linux-android-4.9/prebuilt"
+    android_toolchain_root =
+        android_ndk_root + "/toolchains/aarch64-linux-android-4.9/prebuilt"
     android_toolchain_prefix = "aarch64-linux-android"
     android_app_abi = "arm64-v8a"
   } else if (target_cpu == "x86") {
@@ -85,7 +87,8 @@ if (is_android) {
     android_toolchain_prefix = "i686-linux-android"
     android_app_abi = "x86"
   } else if (target_cpu == "x64") {
-    android_toolchain_root = android_ndk_root + "/toolchains/x86_64-4.9/prebuilt"
+    android_toolchain_root =
+        android_ndk_root + "/toolchains/x86_64-4.9/prebuilt"
     android_toolchain_prefix = "x86_64-linux-android"
     android_app_abi = "x86_64"
   } else {
@@ -96,12 +99,15 @@ if (is_android) {
   android_libcpp_root = "$android_ndk_root/sources/cxx-stl/llvm-libc++"
   android_libcpp_lib_dir = "${android_libcpp_root}/libs/${android_app_abi}"
 
-  android_libgcc_file = android_toolchain_root + "/" + android_toolchain_host_path + "/lib/gcc/" +
+  android_libgcc_file =
+      android_toolchain_root + "/" + android_toolchain_host_path + "/lib/gcc/" +
       android_toolchain_prefix + "/4.9.x/" + "libgcc.a"
 
-  android_toolchain_root = android_toolchain_root + "/" + android_toolchain_host_path
+  android_toolchain_root =
+      android_toolchain_root + "/" + android_toolchain_host_path
 
-  android_clang_path = android_ndk_root + "/toolchains/llvm/prebuilt/" + android_toolchain_host_path + "/bin"
+  android_clang_path = android_ndk_root + "/toolchains/llvm/prebuilt/" +
+                       android_toolchain_host_path + "/bin"
 
   android_tool_prefix = "$android_toolchain_root/bin/$android_toolchain_prefix-"
   android_readelf = "${android_tool_prefix}readelf"
