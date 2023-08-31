@@ -358,7 +358,9 @@ void addValueWithKey(JNIEnv* env, const Local<Context> context, Isolate* isolate
   const uint16_t* unicodeString_key = env->GetStringChars(key, NULL);
   int length = env->GetStringLength(key);
   Local<String> v8Key = String::NewFromTwoByte(isolate, unicodeString_key, v8::NewStringType::kNormal, length).ToLocalChecked();
-  object->Set(context, v8Key, value);
+  // HYBRID MODIFY:
+  // object->Set(context, v8Key, value);
+  object->Set(context, v8Key, value).Check();
   env->ReleaseStringChars(key, unicodeString_key);
 }
 
@@ -830,7 +832,8 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1releaseRuntime
   // HYBRID ADD BEGIN:
   hybrid::OnDestroyIsolate(reinterpret_cast<hybrid::J2V8Runtime *>(v8RuntimePtr));
   // HYBRID ADD END
-  Isolate* isolate = getIsolate(env, v8RuntimePtr);
+  // HYBRID MODIFY:
+  // Isolate* isolate = getIsolate(env, v8RuntimePtr);
   reinterpret_cast<V8Runtime*>(v8RuntimePtr)->context_.Reset();
   reinterpret_cast<V8Runtime*>(v8RuntimePtr)->isolate->Dispose();
   env->DeleteGlobalRef(reinterpret_cast<V8Runtime*>(v8RuntimePtr)->v8);
@@ -895,7 +898,12 @@ bool compileScript(const Local<Context>& context, Isolate *isolate, jstring &jsc
 }
 
 bool runScript(const Local<Context>& context, Isolate* isolate, JNIEnv *env, Local<Script> *script, TryCatch* tryCatch, jlong v8RuntimePtr) {
-  (*script)->Run(context);
+  // HYBRID MODIFY:
+  // (*script)->Run(context);
+  MaybeLocal<Value> local_result = (*script)->Run(context);
+  if (!local_result.IsEmpty()) {
+    return true;
+  }
   if (tryCatch->HasCaught()) {
     throwExecutionException(env, context, isolate, tryCatch, v8RuntimePtr);
     return false;
@@ -1511,7 +1519,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayNullItem
      return;
   }
   uint32_t index = Array::Cast(*array)->Length();
-  array->Set(context, index, Null(isolate));
+  // HYBRID MODIFY:
+  // array->Set(context, index, Null(isolate));
+  array->Set(context, index, Null(isolate)).Check();
 }
 
 JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayUndefinedItem
@@ -1525,7 +1535,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayUndefinedItem
      return;
   }
   int index = Array::Cast(*array)->Length();
-  array->Set(context, index, Undefined(isolate));
+  // HYBRID MODIFY:
+  // array->Set(context, index, Undefined(isolate));
+  array->Set(context, index, Undefined(isolate)).Check();
 }
 
 
@@ -1541,7 +1553,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayIntItem
   }
   Local<Value> v8Value = Int32::New(isolate, value);
   int index = Array::Cast(*array)->Length();
-  array->Set(context, index, v8Value);
+  // HYBRID MODIFY:
+  // array->Set(context, index, v8Value);
+  array->Set(context, index, v8Value).Check();
 }
 
 JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayDoubleItem
@@ -1556,7 +1570,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayDoubleItem
   }
   Local<Value> v8Value = Number::New(isolate, value);
   int index = Array::Cast(*array)->Length();
-  array->Set(context, index, v8Value);
+  // HYBRID MODIFY:
+  // array->Set(context, index, v8Value);
+  array->Set(context, index, v8Value).Check();
 }
 
 JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayBooleanItem
@@ -1571,7 +1587,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayBooleanItem
   }
   Local<Value> v8Value = Boolean::New(isolate, value);
   int index = Array::Cast(*array)->Length();
-  array->Set(context, index, v8Value);
+  // HYBRID MODIFY:
+  // array->Set(context, index, v8Value);
+  array->Set(context, index, v8Value).Check();
 }
 
 JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayStringItem
@@ -1586,7 +1604,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayStringItem
   }
   int index = Array::Cast(*array)->Length();
   Local<String> v8Value = createV8String(env, isolate, value);
-  array->Set(context, index, v8Value);
+  // HYBRID MODIFY:
+  // array->Set(context, index, v8Value);
+  array->Set(context, index, v8Value).Check();
 }
 
 JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayObjectItem
@@ -1601,7 +1621,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1addArrayObjectItem
   }
   int index = Array::Cast(*array)->Length();
   Local<Value> v8Value = Local<Object>::New(isolate, *reinterpret_cast<Persistent<Object>*>(valueHandle));
-  array->Set(context, index, v8Value);
+  // HYBRID MODIFY:
+  // array->Set(context, index, v8Value);
+  array->Set(context, index, v8Value).Check();
 }
 
 int getType(Handle<Value> v8Value) {
@@ -1955,7 +1977,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1setPrototype
   Isolate* isolate = SETUP(env, v8RuntimePtr, )
   Handle<Object> object = Local<Object>::New(isolate, *reinterpret_cast<Persistent<Object>*>(objectHandle));
   Handle<Object> prototype = Local<Object>::New(isolate, *reinterpret_cast<Persistent<Object>*>(prototypeHandle));
-  object->SetPrototype(context, prototype);
+  // HYBRID MODIFY:
+  // object->SetPrototype(context, prototype);
+  object->SetPrototype(context, prototype).Check();
 }
 
 JNIEXPORT jboolean JNICALL Java_com_eclipsesource_v8_V8__1equals
