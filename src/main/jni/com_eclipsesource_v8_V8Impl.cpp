@@ -21,11 +21,15 @@
 
 #define TAG "J2V8_V8Impl"
 
+// HYBRID ADD BEGIN:
+#if defined(WIN32) || defined(WIN64)
 #pragma comment(lib, "userenv.lib")
 #pragma comment(lib, "IPHLPAPI.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "WINMM.lib")
 #pragma comment( lib, "psapi.lib" )
+#endif
+// HYBRID ADD END
 
 using namespace std;
 using namespace v8;
@@ -391,6 +395,13 @@ class ShellArrayBufferAllocator : public v8::ArrayBuffer::Allocator {
   virtual void Free(void* data, size_t) { free(data); }
 };
 
+// HYBRID ADD BEGIN:
+#include "hybrid-hook.h"
+#if defined(SUPPORT_J2V8RUNTIME)
+extern "C" int InitJavaJsRuntime(JavaVM *vm, JNIEnv *env);
+#endif
+// HYBRID ADD END
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void*) {
     JNIEnv *env;
     jint onLoad_err = -1;
@@ -461,6 +472,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void*) {
     v8InspectorDelegateOnResponseMethodID = env->GetMethodID(v8InspectorDelegateCls, "onResponse", "(Ljava/lang/String;)V");
     v8InspectorDelegateWaitFrontendMessageMethodID = env->GetMethodID(v8InspectorDelegateCls, "waitFrontendMessageOnPause", "()V");
 
+    // HYBRID ADD BEGIN:
+#if defined(SUPPORT_J2V8RUNTIME)
+    InitJavaJsRuntime(vm, env);
+#endif
+    // HYBRID ADD END
     return JNI_VERSION_1_6;
 }
 
@@ -514,11 +530,22 @@ JNIEXPORT jboolean JNICALL Java_com_eclipsesource_v8_V8__1isNodeCompatible
    return false;
 }
 
+// HYBRID MODIFY:
 JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
- (JNIEnv *env, jobject v8, jstring globalAlias) {
+ (JNIEnv *env, jobject v8, jstring globalAlias, jstring nativejsSnapshotSoName) {
     V8Runtime* runtime = new V8Runtime();
     v8::Isolate::CreateParams create_params;
     create_params.array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+    // HYBRID ADD BEGIN:
+    if (nativejsSnapshotSoName != NULL) {
+        const char *nativejs_snapshot_so_name =
+            env->GetStringUTFChars(nativejsSnapshotSoName, NULL);
+        create_params.snapshot_blob = const_cast<v8::StartupData *>(
+            hybrid::GetCustomJsSnapshot(nativejs_snapshot_so_name));
+        env->ReleaseStringUTFChars(nativejsSnapshotSoName,
+                                   nativejs_snapshot_so_name);
+    }
+    // HYBRID ADD END
     runtime->isolate = v8::Isolate::New(create_params);
     Locker locker(runtime->isolate);
     v8::Isolate::Scope isolate_scope(runtime->isolate);
@@ -540,6 +567,9 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
       runtime->globalObject = new Persistent<Object>;
       runtime->globalObject->Reset(runtime->isolate, context->Global()->GetPrototype()->ToObject(context).ToLocalChecked());
     }
+    // HYBRID ADD BEGIN:
+    hybrid::OnCreateIsolate(reinterpret_cast<hybrid::J2V8Runtime *>(runtime));
+    // HYBRID ADD END
     return reinterpret_cast<jlong>(runtime);
 }
 
@@ -797,6 +827,9 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1releaseRuntime
   if (v8RuntimePtr == 0) {
     return;
   }
+  // HYBRID ADD BEGIN:
+  hybrid::OnDestroyIsolate(reinterpret_cast<hybrid::J2V8Runtime *>(v8RuntimePtr));
+  // HYBRID ADD END
   Isolate* isolate = getIsolate(env, v8RuntimePtr);
   reinterpret_cast<V8Runtime*>(v8RuntimePtr)->context_.Reset();
   reinterpret_cast<V8Runtime*>(v8RuntimePtr)->isolate->Dispose();

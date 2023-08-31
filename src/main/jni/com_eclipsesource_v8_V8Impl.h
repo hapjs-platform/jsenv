@@ -111,9 +111,13 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1releaseRuntime
  * Class:     com_eclipsesource_v8_V8
  * Method:    _createIsolate
  * Signature: (Ljava/lang/String;)J
+ * # HYBRID MODIFY:
+ * # Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
-  (JNIEnv *, jobject, jstring);
+  // HYBRID MODIFY:
+  //(JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jstring);
 
 /*
  * Class:     com_eclipsesource_v8_V8

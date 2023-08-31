@@ -21,7 +21,9 @@ class LibraryLoader {
     static final String SEPARATOR;
     static final String DELIMITER;
 
-    static final String SWT_LIB_DIR = ".j2v8";
+    // HYBRID MODIFY:
+    // static final String SWT_LIB_DIR = ".j2v8";
+    static final String SWT_LIB_DIR = ".jsenv";
 
     static {
         DELIMITER = System.getProperty("line.separator"); //$NON-NLS-1$
@@ -36,7 +38,9 @@ class LibraryLoader {
      * <pre><code>{arch}-[vendor]-{operating_system}</pre></code>
      */
     public static String computeLibraryShortName(boolean withLinuxVendor) {
-        String prefix = "j2v8";
+        // HYBRID MODIFY:
+        // String prefix = "j2v8";
+        String prefix = "jsenv";
         String vendor = withLinuxVendor && PlatformDetector.OS.isLinux() ? PlatformDetector.Vendor.getName() : null;
         String os = PlatformDetector.OS.getName();
         String arch = PlatformDetector.Arch.getName();
@@ -79,7 +83,9 @@ class LibraryLoader {
 
     static void loadLibrary(final String tempDirectory) {
         if (PlatformDetector.OS.isAndroid()) {
-            System.loadLibrary("j2v8");
+            // HYBRID MODIFY:
+            // System.loadLibrary("j2v8");
+            System.loadLibrary("jsenv");
             return;
         }
 
@@ -94,7 +100,7 @@ class LibraryLoader {
             return;
 
         String path = null;
-            
+
         if (tempDirectory != null) {
             path = tempDirectory;
         } else {

@@ -116,6 +116,12 @@ public class V8 extends V8Object {
         return createV8Runtime(null, null);
     }
 
+    // HYBRID ADD BEGIN:
+    public static V8 createV8Runtime(final String globalAlias, final String tempDirectory) {
+        return createV8Runtime(globalAlias, tempDirectory, null);
+    }
+    // HYBRID ADD END
+
     /**
      * Creates a new V8Runtime and loads the required native libraries if they
      * are not already loaded. An alias is also set for the global scope. For example,
@@ -144,7 +150,11 @@ public class V8 extends V8Object {
      *
      * @return A new isolated V8 Runtime.
      */
-    public static V8 createV8Runtime(final String globalAlias, final String tempDirectory) {
+
+    // HYBRID MODIFY:
+    // public static V8 createV8Runtime(final String globalAlias, final String tempDirectory) {
+    public static V8 createV8Runtime(final String globalAlias, final String tempDirectory,
+                                     final String nativejsSnapshotSoName) {
         if (!nativeLibraryLoaded) {
             synchronized (lock) {
                 if (!nativeLibraryLoaded) {
@@ -157,7 +167,9 @@ public class V8 extends V8Object {
             _setFlags(v8Flags);
             initialized = true;
         }
-        V8 runtime = new V8(globalAlias);
+        // HYBRID MODIFY:
+        // V8 runtime = new V8(globalAlias);
+        V8 runtime = new V8(globalAlias, nativejsSnapshotSoName);
         synchronized (lock) {
             runtimeCounter++;
         }
@@ -273,14 +285,24 @@ public class V8 extends V8Object {
         this(null);
     }
 
-    protected V8(final String globalAlias) {
+    // HYBRID MODIFY:
+    // protected V8(final String globalAlias) {
+    protected V8(final String globalAlias, final String nativejsSnapshotSoName) {
         super(null);
         released = false;
-        v8RuntimePtr = _createIsolate(globalAlias);
+        // HYBRID MODIFY:
+        // v8RuntimePtr = _createIsolate(globalAlias);
+        v8RuntimePtr = _createIsolate(globalAlias, nativejsSnapshotSoName);
         locker = new V8Locker(this);
         checkThread();
         objectHandle = _getGlobalObject(v8RuntimePtr);
     }
+
+    // HYBRID ADD BEGIN:
+    protected V8(final String globalAlias) {
+        this(globalAlias, null);
+    }
+    // HYBRID ADD END
 
     public long createInspector(final V8InspectorDelegate inspectorDelegate, final String contextName) {
         return _createInspector(v8RuntimePtr, inspectorDelegate, contextName);
@@ -1466,7 +1488,9 @@ public class V8 extends V8Object {
 
     private native void _releaseRuntime(long v8RuntimePtr);
 
-    private native long _createIsolate(String globalAlias);
+    // HYBRID MODIFY:
+    // private native long _createIsolate(String globalAlias);
+    private native long _createIsolate(String globalAlias, String nativejsSnapshotSoName);
 
     private native long _createInspector(long v8RuntimePtr, final V8InspectorDelegate inspectorDelegate, final String contextName);
 
