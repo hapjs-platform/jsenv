@@ -65,6 +65,9 @@ JSInspectorSessionImpl::~JSInspectorSessionImpl() {
 
 void JSInspectorSessionImpl::DispatchProtocolMessage(const jschar_t* message,
                                                      size_t size) {
+  v8::Isolate* isolate = jsenv_->isolate();
+  v8::Locker locker(isolate);
+  v8::Isolate::Scope isolate_scope(isolate);
   if (v8_session_) {
     StringView message_view(reinterpret_cast<const uint16_t*>(message), size);
     v8_session_->dispatchProtocolMessage(message_view);
