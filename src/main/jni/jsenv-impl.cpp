@@ -264,7 +264,7 @@ bool JSEnvImpl::ExecuteScript(const JSValue* code_value,
     v8_script_name = String::NewFromUtf8(isolate_, "").ToLocalChecked();
   }
 
-  ScriptOrigin origin(v8_script_name, Integer::New(isolate_, start_lineno));
+  ScriptOrigin origin(v8_script_name, start_lineno);
 
   Local<Script> script;
 
@@ -1362,9 +1362,8 @@ void* JSEnvImpl::GetTypedArrayPointer(JSObject typed_array,
 
   size_t byte_offset = v8_typed_array->ByteOffset();
 
-  ArrayBuffer::Contents contents = v8_array_buffer->GetContents();
-
-  uint8_t* pdata = reinterpret_cast<uint8_t*>(contents.Data());
+  uint8_t *pdata =
+      reinterpret_cast<uint8_t *>(v8_array_buffer->GetBackingStore()->Data());
 
   if (pdata == nullptr) {
     return nullptr;
@@ -1413,7 +1412,10 @@ JSObject JSEnvImpl::NewArrayBufferExternal(
 
   EscapableHandleScope escape_handle_scope(isolate_);
 
-  Local<ArrayBuffer> array_buffer = ArrayBuffer::New(isolate_, byte, length);
+  auto backing_store = v8::ArrayBuffer::NewBackingStore(
+      byte, length, v8::BackingStore::EmptyDeleter, nullptr);
+  Local<ArrayBuffer> array_buffer =
+      ArrayBuffer::New(isolate_, std::move(backing_store));
 
   if (array_buffer.IsEmpty()) {
     return nullptr;
@@ -1462,9 +1464,7 @@ void* JSEnvImpl::GetArrayBufferPointer(JSObject object,
     *plength = array_buffer->ByteLength();
   }
 
-  ArrayBuffer::Contents contents = array_buffer->GetContents();
-
-  return contents.Data();
+  return array_buffer->GetBackingStore()->Data();
 }
 
 // promise

@@ -34,73 +34,24 @@ config("compiler") {
     "__ANDROID_API__=$compile_api_level",
   ]
 
-  ldflags = [
-  ]
+  ldflags = []
 
-  android_compile_sysroot = "$android_ndk_root/sysroot"
-  android_linker_sysroot = android_compile_sysroot
   if (target_cpu == "arm") {
     abi_target = "arm-linux-androideabi"
-    arm_android_sysroot_subdir = "platforms/android-${android32_ndk_api_level}/arch-arm"
-    android_linker_sysroot = "$android_ndk_root/$arm_android_sysroot_subdir"
   } else if (target_cpu == "arm64") {
     abi_target = "aarch64-linux-android"
-    arm64_android_sysroot_subdir = "platforms/android-${android64_ndk_api_level}/arch-arm64"
-    android_linker_sysroot = "$android_ndk_root/$arm64_android_sysroot_subdir"
   } else if (target_cpu == "x86") {
     abi_target = "i686-linux-android"
-    x86_android_sysroot_subdir = "platforms/android-${android32_ndk_api_level}/arch-x86"
-    android_linker_sysroot = "$android_ndk_root/$x86_android_sysroot_subdir"
   } else if (target_cpu == "x64") {
     abi_target = "x86_64-linux-android"
-    x86_64_android_sysroot_subdir = "platforms/android-${android64_ndk_api_level}/arch-x86_64"
-    android_linker_sysroot = "$android_ndk_root/$x86_64_android_sysroot_subdir"
   } else {
     assert(false, "Target ABI not supported.")
   }
 
   if (is_clang) {
-    cflags += [
-      "--target=$abi_target",
-    ]
-    ldflags += [
-      "--target=$abi_target",
-    ]
+    cflags += [ "--target=$abi_target$compile_api_level" ]
+    ldflags += [ "--target=$abi_target$compile_api_level" ]
   }
-
-  cflags += [
-    "-isystem" +
-        rebase_path("$android_ndk_root/sysroot/usr/include/$abi_target", root_build_dir),
-    "--sysroot=" + rebase_path(android_compile_sysroot, root_build_dir),
-  ]
-
-  ldflags += [
-    "--sysroot=" + rebase_path(android_linker_sysroot, root_build_dir),
-  ]
-
-  if (android_ndk_major_version >= 13) {
-    libcxx_include_path =
-        rebase_path("$android_libcpp_root/include", root_build_dir)
-    libcxxabi_include_path =
-        rebase_path("$android_ndk_root/sources/cxx-stl/llvm-libc++abi/include",
-                    root_build_dir)
-  } else {
-    libcxx_include_path =
-        rebase_path("$android_libcpp_root/libcxx/include", root_build_dir)
-    libcxxabi_include_path = rebase_path(
-        "$android_ndk_root/sources/cxx-stl/llvm-libc++abi/libcxxabi/include",
-        root_build_dir)
-  }
-
-  android_support_include_path = rebase_path(
-      "$android_ndk_root/sources/android/support/include",
-      root_build_dir)
-
-  cflags_cc += [
-    "-isystem" + libcxx_include_path,
-    "-isystem" + libcxxabi_include_path,
-    "-isystem" + android_support_include_path,
-  ]
 
   # Android Linker settings
   ldflags += [
@@ -110,10 +61,6 @@ config("compiler") {
     "-Wl,--warn-shared-textrel",
   ]
 
-  if (is_clang) {
-    ldflags += [ "--gcc-toolchain=" + rebase_path(android_toolchain_root, root_build_dir) ]
-  }
-
   # Use shared C++
   libs = [ "c" ]
   libs += [ "m" ]
@@ -121,6 +68,7 @@ config("compiler") {
   libs += [ "c++abi" ]
   libs += [ "android" ]
   libs += [ "log" ]
+
   # FIXME(liushouqun): Use llvm shared libc++, need to process the "libc++_shared.so".
   libs += [ "c++_shared" ]
   libs += [ android_libgcc_file ]
@@ -128,7 +76,7 @@ config("compiler") {
   if (current_cpu == "arm" || current_cpu == "x86") {
     # In Android NDK r17, libunwind and libandroid_support are only required in
     # 32-bit build.
-    if(current_cpu == "arm") {
+    if (current_cpu == "arm") {
       libs += [ "unwind" ]
     }
     libs += [ "android_support" ]
@@ -139,13 +87,9 @@ config("compiler") {
 
 copy("libc++_shared") {
   soname = "libc++_shared.so"
-  sources = [
-    "${android_libcpp_lib_dir}/${soname}",
-  ]
+  sources = [ "${android_libcpp_lib_dir}/${soname}" ]
 
-  outputs = [
-    "${root_out_dir}/${soname}",
-  ]
+  outputs = [ "${root_out_dir}/${soname}" ]
 }
 
 config("executatble_config") {

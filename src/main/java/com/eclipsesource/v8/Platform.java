@@ -1,8 +1,3 @@
-/**
- * Copyright (c) 2021, the hapjs-platform Project Contributors
- * SPDX-License-Identifier: EPL-1.0
- */
-
 package com.eclipsesource.v8;
 
 public class Platform {
